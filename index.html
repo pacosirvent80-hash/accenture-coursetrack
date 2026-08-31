@@ -344,6 +344,11 @@
       font-weight: 700; font-family: inherit;
     }
     .resolve-btn:hover { text-decoration: underline; }
+    .edit-inc-btn {
+      font-size: 11px; color: var(--text-3); background: none; border: none;
+      cursor: pointer; font-family: inherit; padding: 0 2px;
+    }
+    .edit-inc-btn:hover { color: var(--primary); }
 
     /* ── Section title ────────────────────────────────── */
     .sec-title {
@@ -1297,6 +1302,7 @@ function renderTab() {
           <span class="inc-cat">${i.category}</span>
           <span class="sev sev-${(i.severity||'Media').toLowerCase()}">${i.severity}</span>
           <span class="vtag">v${i._ver}</span>
+          <button class="edit-inc-btn" onclick="openEditIncModal('${i.id}')" title="Editar incidencia">✏</button>
           ${!i.resolved
             ?`<button class="resolve-btn" onclick="resolveInc('${i.id}')">Resolver ✓</button>`
             :`<span style="margin-left:auto;font-size:11px;color:#22C55E;font-weight:600">✓ Resuelta</span>`}
@@ -1304,7 +1310,7 @@ function renderTab() {
         <div class="inc-title">${i.title}</div>
         <div class="inc-desc">${i.description}</div>
         ${i.resolved&&i.resolution?`<div class="inc-foot">📝 ${i.resolution}</div>`:''}
-        <div class="inc-foot">📅 ${fmt(i.date)}${i.creadaPor?` · 👤 ${i.creadaPor}`:''}${i.resolved&&i.resueltaPor?` · ✓ ${i.resueltaPor}`:''}</div>
+        <div class="inc-foot">📅 ${fmt(i.date)}${i.creadaPor?` · 👤 ${i.creadaPor}`:''}${i.editadoPor?` · ✏ ${i.editadoPor} (${fmt(i.fechaEdicion)})`:''} ${i.resolved&&i.resueltaPor?` · ✓ ${i.resueltaPor}`:''}</div>
       </div>`;
     el.innerHTML=
       (open.length  ?`<div class="sec-title">Abiertas (${open.length})</div>${open.map(mkCard).join('')}`:'') +
@@ -1320,6 +1326,48 @@ function resolveInc(iid) {
   save(); renderPanel(); renderTable();
   toast('Incidencia marcada como resuelta ✓');
 }
+function openEditIncModal(iid) {
+  const c = getCourse(selId);
+  let inc = null;
+  c.versions.forEach(v => { const f=(v.incidents||[]).find(x=>x.id===iid); if(f) inc=f; });
+  if (!inc) return;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('mConfirm').style.cssText = '';
+  document.getElementById('mFoot').style.display    = '';
+  document.getElementById('mIcon').textContent      = '✏';
+  document.getElementById('mTitle').textContent     = 'Editar incidencia';
+  document.getElementById('mConfirm').textContent   = 'Guardar cambios';
+  document.getElementById('mBody').innerHTML = `
+    <div class="f2">
+      <div class="fg"><label>Categoría *</label>
+        <select id="f_icat">${INC_CATS.map(x=>`<option${x===inc.category?' selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="fg"><label>Severidad *</label>
+        <select id="f_isev">${SEVS.map(x=>`<option${x===inc.severity?' selected':''}>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="fg"><label>Título *</label>
+      <input id="f_itit" type="text" value="${inc.title.replace(/"/g,'&quot;')}"></div>
+    <div class="fg"><label>Descripción detallada *</label>
+      <textarea id="f_idesc" style="min-height:96px">${inc.description}</textarea></div>
+    <div class="fg"><label>Fecha de detección</label>
+      <input id="f_idate" type="date" value="${inc.date}"></div>
+    ${inc.editadoPor?`<div class="gas-status-box info" style="font-size:12px">Última edición: ✏ ${inc.editadoPor} — ${fmt(inc.fechaEdicion)}</div>`:''}`;
+  confirmFn = () => {
+    const tit  = document.getElementById('f_itit').value.trim();
+    const desc = document.getElementById('f_idesc').value.trim();
+    if (!tit||!desc) { toast('Título y descripción son obligatorios'); return false; }
+    inc.category    = document.getElementById('f_icat').value;
+    inc.severity    = document.getElementById('f_isev').value;
+    inc.title       = tit;
+    inc.description = desc;
+    inc.date        = document.getElementById('f_idate').value || today();
+    inc.editadoPor  = activeUser;
+    inc.fechaEdicion = today();
+    c.updatedAt = today();
+    save(); switchTab('incidents'); return true;
+  };
+}
+
 function deleteCourse() {
   const c=getCourse(selId);
   if(!confirm(`¿Eliminar "${c.name}"?\nEsta acción no se puede deshacer.`)) return;
