@@ -345,10 +345,13 @@
     }
     .resolve-btn:hover { text-decoration: underline; }
     .edit-inc-btn {
-      font-size: 11px; color: var(--text-3); background: none; border: none;
-      cursor: pointer; font-family: inherit; padding: 0 2px;
+      font-size: 11px; font-weight: 600; font-family: inherit;
+      color: var(--text-2); background: none;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 2px 8px; cursor: pointer; white-space: nowrap;
+      transition: all .15s;
     }
-    .edit-inc-btn:hover { color: var(--primary); }
+    .edit-inc-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 
     /* ── Section title ────────────────────────────────── */
     .sec-title {
@@ -1302,7 +1305,7 @@ function renderTab() {
           <span class="inc-cat">${i.category}</span>
           <span class="sev sev-${(i.severity||'Media').toLowerCase()}">${i.severity}</span>
           <span class="vtag">v${i._ver}</span>
-          <button class="edit-inc-btn" onclick="openEditIncModal('${i.id}')" title="Editar incidencia">✏</button>
+          <button class="edit-inc-btn" onclick="openEditIncModal('${i.id}')">✏ Editar incidencia</button>
           ${!i.resolved
             ?`<button class="resolve-btn" onclick="resolveInc('${i.id}')">Resolver ✓</button>`
             :`<span style="margin-left:auto;font-size:11px;color:#22C55E;font-weight:600">✓ Resuelta</span>`}
@@ -1349,23 +1352,50 @@ function openEditIncModal(iid) {
       <input id="f_itit" type="text" value="${inc.title.replace(/"/g,'&quot;')}"></div>
     <div class="fg"><label>Descripción detallada *</label>
       <textarea id="f_idesc" style="min-height:96px">${inc.description}</textarea></div>
-    <div class="fg"><label>Fecha de detección</label>
-      <input id="f_idate" type="date" value="${inc.date}"></div>
-    ${inc.editadoPor?`<div class="gas-status-box info" style="font-size:12px">Última edición: ✏ ${inc.editadoPor} — ${fmt(inc.fechaEdicion)}</div>`:''}`;
+    <div class="f2">
+      <div class="fg"><label>Fecha de detección</label>
+        <input id="f_idate" type="date" value="${inc.date}"></div>
+      <div class="fg"><label>Estado</label>
+        <select id="f_iresolved" onchange="toggleResolutionField()">
+          <option value="0"${!inc.resolved?' selected':''}>Abierta</option>
+          <option value="1"${inc.resolved?' selected':''}>Resuelta</option>
+        </select></div>
+    </div>
+    <div class="fg" id="fg_resolution" style="${inc.resolved?'':'display:none'}">
+      <label>Texto de resolución</label>
+      <textarea id="f_iresolution" style="min-height:60px">${inc.resolution||''}</textarea>
+    </div>
+    <div class="fg"><label>Creada por</label>
+      <input type="text" value="${inc.creadaPor||'—'}" disabled style="background:var(--surface-2);color:var(--text-2)"></div>
+    ${inc.editadoPor?`
+    <div class="fg"><label>Última edición</label>
+      <input type="text" value="✏ ${inc.editadoPor} — ${fmt(inc.fechaEdicion)}" disabled style="background:var(--surface-2);color:var(--text-2)"></div>`:''}
+    ${inc.resueltaPor?`
+    <div class="fg"><label>Resuelta por</label>
+      <input type="text" value="✓ ${inc.resueltaPor}" disabled style="background:var(--surface-2);color:var(--text-2)"></div>`:''}`;
   confirmFn = () => {
     const tit  = document.getElementById('f_itit').value.trim();
     const desc = document.getElementById('f_idesc').value.trim();
     if (!tit||!desc) { toast('Título y descripción son obligatorios'); return false; }
+    const nowResolved = document.getElementById('f_iresolved').value === '1';
     inc.category    = document.getElementById('f_icat').value;
     inc.severity    = document.getElementById('f_isev').value;
     inc.title       = tit;
     inc.description = desc;
     inc.date        = document.getElementById('f_idate').value || today();
-    inc.editadoPor  = activeUser;
+    inc.resolved    = nowResolved;
+    inc.resolution  = nowResolved ? (document.getElementById('f_iresolution').value.trim() || inc.resolution || '') : inc.resolution;
+    if (nowResolved && !inc.resueltaPor) inc.resueltaPor = activeUser;
+    inc.editadoPor   = activeUser;
     inc.fechaEdicion = today();
     c.updatedAt = today();
     save(); switchTab('incidents'); return true;
   };
+}
+
+function toggleResolutionField() {
+  const show = document.getElementById('f_iresolved').value === '1';
+  document.getElementById('fg_resolution').style.display = show ? '' : 'none';
 }
 
 function deleteCourse() {
