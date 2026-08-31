@@ -741,9 +741,10 @@
   </div>
   <div class="panel-body" id="panelBody"></div>
   <div class="panel-foot">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('editCourse')">✏ Editar curso</button>
     <button class="btn btn-ghost btn-sm" onclick="openModal('status')">↔ Cambiar estado</button>
     <button class="btn btn-ghost btn-sm" onclick="openModal('version')">+ Nueva versión</button>
-    <button class="btn btn-ghost btn-sm" style="color:#EF4444;border-color:#FECACA" onclick="openModal('incident')">⚡ Incidencia</button>
+    <button class="btn btn-ghost btn-sm" style="color:#EF4444;border-color:#FECACA" onclick="openModal('incident')">⚡ Nueva incidencia</button>
     <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteCourse()" title="Eliminar curso">🗑</button>
   </div>
 </aside>
@@ -1545,6 +1546,50 @@ function doPost(e) {
         createdAt:now, updatedAt:now,
         versions:[{id:uid(),number:'1.0',status:document.getElementById('f_stat').value,date:now,notes:'Alta inicial.',incidents:[],modificadoPor:activeUser}]
       });
+      save(); return true;
+    };
+  }
+
+  // ── Editar curso ─────────────────────────────────────
+  else if (mode==='editCourse') {
+    document.getElementById('mIcon').textContent  = '✏';
+    document.getElementById('mTitle').textContent = 'Editar curso';
+    document.getElementById('mConfirm').textContent = 'Guardar cambios';
+    document.getElementById('mBody').innerHTML = `
+      <div class="fg"><label>Nombre del curso *</label>
+        <input id="f_name" type="text" value="${c.name.replace(/"/g,'&quot;')}"></div>
+      <div class="f2">
+        <div class="fg"><label>Código *</label>
+          <input id="f_code" type="text" value="${c.code.replace(/"/g,'&quot;')}"></div>
+        <div class="fg"><label>Proveedor *</label>
+          <select id="f_prov">${PROVIDERS.map(p=>`<option${p===c.provider?' selected':''}>${p}</option>`).join('')}</select></div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label>Estándar SCORM</label>
+          <select id="f_scorm">
+            ${['SCORM 1.2','SCORM 2004 3ª ed.','xAPI (Tin Can)','cmi5','HTML sin tracking']
+              .map(s=>`<option${s===c.scormVersion?' selected':''}>${s}</option>`).join('')}
+          </select></div>
+        <div class="fg"><label>Duración estimada</label>
+          <input id="f_dur" type="text" value="${(c.duration||'').replace(/"/g,'&quot;')}"></div>
+      </div>
+      <div class="fg"><label>Idioma</label>
+        <select id="f_lang">${LANGUAGES.map(l=>`<option${l===c.language?' selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fg"><label>Notas internas</label>
+        <textarea id="f_notes">${c.notes||''}</textarea></div>`;
+    confirmFn = () => {
+      const name = document.getElementById('f_name').value.trim();
+      const code = document.getElementById('f_code').value.trim();
+      const prov = document.getElementById('f_prov').value.trim();
+      if (!name||!code||!prov) { toast('Nombre, código y proveedor son obligatorios'); return false; }
+      c.name         = name;
+      c.code         = code;
+      c.provider     = prov;
+      c.scormVersion = document.getElementById('f_scorm').value;
+      c.duration     = document.getElementById('f_dur').value;
+      c.language     = document.getElementById('f_lang').value;
+      c.notes        = document.getElementById('f_notes').value;
+      c.updatedAt    = today();
       save(); return true;
     };
   }
