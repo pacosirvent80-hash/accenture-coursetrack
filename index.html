@@ -477,7 +477,121 @@
       .info-grid { grid-template-columns: 1fr; }
       .f2 { grid-template-columns: 1fr; }
       .col-prov, .col-ver, .col-days { display: none; }
+      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
+
+    /* ── Teléfonos ≤ 600px ────────────────────────────────── */
+    @media (max-width: 600px) {
+      :root { --hdr-h: 52px; }
+      body { font-size: 13px; }
+
+      /* Cabecera compacta: botones ghost → cuadrados de icono */
+      .hdr { padding: 0 10px; gap: 4px; }
+      .hdr-logo { font-size: 14px; gap: 7px; }
+      .hdr-logo .icon { width: 28px; height: 28px; font-size: 13px; }
+      .hdr-actions { gap: 3px; }
+      .btn-lbl { display: none; }
+      .conn-pill { font-size: 10px; padding: 3px 7px; gap: 3px; }
+      .hdr-actions .btn-ghost { width: 34px; height: 34px; padding: 0; justify-content: center; }
+      .hdr-actions .btn-icon  { width: 34px; height: 34px; }
+      .hdr-actions .btn-primary { padding: 0 10px; height: 34px; font-size: 13px; }
+
+      /* Espaciado principal */
+      .main { padding: 12px 10px; }
+
+      /* Estadísticas: 3 columnas compactas */
+      .stats { grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 14px; }
+      .stat { padding: 10px 6px; }
+      .stat-val { font-size: 20px; }
+      .stat-lbl { font-size: 9px; }
+
+      /* Toolbar apilada */
+      .toolbar { flex-direction: column; align-items: stretch; gap: 6px; margin-bottom: 10px; }
+      .search { min-width: 100%; max-width: 100%; }
+      .sel { width: 100%; }
+      .tb-space { display: none; }
+      .count-lbl { font-size: 11px; text-align: right; }
+
+      /* 16px en inputs previene zoom automático en iOS */
+      .search input, .sel,
+      .fg input, .fg select, .fg textarea { font-size: 16px; }
+      .search input, .sel { min-height: 40px; }
+
+      /* Áreas táctiles */
+      .btn { touch-action: manipulation; }
+      .stat { touch-action: manipulation; }
+
+      /* ── TABLA → TARJETAS ──────────────────────────────── */
+      /* Deshabilitar estilos de tabla */
+      .table-wrap { background: transparent; border: none; box-shadow: none; overflow: visible; }
+      table, tbody { display: block; }
+      thead { display: none; }
+      tbody { display: flex; flex-direction: column; gap: 8px; }
+
+      /* Cada fila = tarjeta en grid 2×2 */
+      tbody tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        column-gap: 8px; row-gap: 4px;
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px;
+        box-shadow: var(--shadow-sm);
+        cursor: pointer;
+        transition: border-color .15s, box-shadow .15s;
+        border-left: 1.5px solid var(--border);
+      }
+      tbody tr:hover  { border-color: var(--primary); box-shadow: var(--shadow); }
+      tbody tr.sel-row { border-color: var(--primary); background: var(--primary-light); border-left: 3px solid var(--primary); }
+
+      /* Ocultar todas las celdas y mostrar solo las que queremos */
+      tbody td { display: none; padding: 0; vertical-align: unset; }
+
+      /* Nombre del curso → columna 1, fila 1 */
+      tbody td:nth-child(1) { display: block; grid-column: 1; grid-row: 1; }
+
+      /* Estado → columna 1, fila 2 */
+      tbody td:nth-child(4) { display: flex; align-items: center; grid-column: 1; grid-row: 2; }
+
+      /* Incidencias → columna 2, ocupa ambas filas */
+      tbody td:nth-child(5) { display: flex; align-items: center; justify-content: flex-end; grid-column: 2; grid-row: 1 / 3; }
+
+      /* Ajuste de tamaños en tarjeta */
+      .c-name { font-size: 13px; margin-bottom: 1px; }
+      .c-code { font-size: 11px; }
+      .inc-count { min-width: 26px; height: 26px; font-size: 12px; border-radius: 13px; }
+
+      /* Panel lateral */
+      .panel { padding-top: env(safe-area-inset-top, 0px); }
+      .panel-hdr { padding: 14px 14px 12px; }
+      .panel-body { padding: 14px; }
+      .panel-foot { padding: 10px 12px; gap: 4px; flex-wrap: wrap; }
+      .panel-foot .btn-sm { font-size: 11px; padding: 7px 8px; }
+      .tab-btn { padding: 8px 8px; font-size: 12px; }
+
+      /* Modal */
+      .overlay { padding: 10px; }
+      .modal { border-radius: var(--radius); max-height: 92vh; }
+      .modal-hdr { padding: 14px 16px 12px; }
+      .modal-body { padding: 14px 16px; }
+      .modal-foot { padding: 10px 16px; }
+      .status-opts { grid-template-columns: 1fr 1fr; }
+
+      /* Toast con safe-area iOS */
+      #toast { bottom: max(16px, env(safe-area-inset-bottom, 16px)); white-space: normal; text-align: center; max-width: 90vw; }
+    }
+
+    /* ── Teléfonos pequeños ≤ 400px ───────────────────────── */
+    @media (max-width: 400px) {
+      .stats { grid-template-columns: repeat(2,1fr); }
+      .panel-foot { flex-direction: column; }
+      .panel-foot .btn-sm { width: 100%; justify-content: center; }
+      .panel-foot .btn-danger { width: auto; align-self: flex-end; }
+    }
+
+    * { -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
 <body>
@@ -493,10 +607,10 @@
     <button class="conn-pill local" id="connPill" onclick="openModal('settings')" title="Configurar Google Sheets">
       ⚫ Local
     </button>
-    <button class="btn btn-ghost btn-sm" onclick="exportJSON()" title="Exportar JSON">⬇ Exportar</button>
-    <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ Importar</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportJSON()" title="Exportar JSON">⬇ <span class="btn-lbl">Exportar</span></button>
+    <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('settings')" title="Configuración">⚙</button>
-    <button class="btn btn-primary" onclick="openModal('course')">+ Nuevo curso</button>
+    <button class="btn btn-primary" onclick="openModal('course')">+ <span class="btn-lbl">Nuevo curso</span></button>
   </div>
 </header>
 
@@ -532,9 +646,9 @@
           <th class="col-prov">Proveedor</th>
           <th class="col-ver">Versión</th>
           <th>Estado</th>
-          <th>Incidencias</th>
+          <th class="col-inc">Incidencias</th>
           <th class="col-days">Días</th>
-          <th class="sort" onclick="sortBy('updatedAt')">Actualizado</th>
+          <th class="sort col-updated" onclick="sortBy('updatedAt')">Actualizado</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -940,9 +1054,9 @@ function renderTable() {
       <td class="col-prov">${c.provider}</td>
       <td class="col-ver"><span class="vtag">v${cv?.number||'—'}</span></td>
       <td>${badge(stat)}</td>
-      <td>${oi?`<span class="inc-count">${oi}</span>`:'<span style="color:var(--text-3);font-size:12px">—</span>'}</td>
+      <td class="col-inc">${oi?`<span class="inc-count">${oi}</span>`:'<span style="color:var(--text-3);font-size:12px">—</span>'}</td>
       <td class="col-days"><span class="days ${dc}">${days}d</span></td>
-      <td style="font-size:12px;color:var(--text-2)">${fmt(c.updatedAt)}</td>
+      <td class="col-updated" style="font-size:12px;color:var(--text-2)">${fmt(c.updatedAt)}</td>
     </tr>`;
   }).join('');
 }
