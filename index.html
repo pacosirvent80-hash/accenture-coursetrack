@@ -344,6 +344,11 @@
       font-weight: 700; font-family: inherit;
     }
     .resolve-btn:hover { text-decoration: underline; }
+    .inc-actions {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 10px; padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
     .edit-inc-btn {
       font-size: 11px; font-weight: 600; font-family: inherit;
       color: var(--text-2); background: none;
@@ -1305,15 +1310,16 @@ function renderTab() {
           <span class="inc-cat">${i.category}</span>
           <span class="sev sev-${(i.severity||'Media').toLowerCase()}">${i.severity}</span>
           <span class="vtag">v${i._ver}</span>
-          <button class="edit-inc-btn" onclick="openEditIncModal('${i.id}')">✏ Editar incidencia</button>
-          ${!i.resolved
-            ?`<button class="resolve-btn" onclick="resolveInc('${i.id}')">Resolver ✓</button>`
-            :`<span style="margin-left:auto;font-size:11px;color:#22C55E;font-weight:600">✓ Resuelta</span>`}
+          ${i.resolved?`<span style="margin-left:auto;font-size:11px;color:#22C55E;font-weight:600">✓ Resuelta</span>`:''}
         </div>
         <div class="inc-title">${i.title}</div>
         <div class="inc-desc">${i.description}</div>
         ${i.resolved&&i.resolution?`<div class="inc-foot">📝 ${i.resolution}</div>`:''}
         <div class="inc-foot">📅 ${fmt(i.date)}${i.creadaPor?` · 👤 ${i.creadaPor}`:''}${i.editadoPor?` · ✏ ${i.editadoPor} (${fmt(i.fechaEdicion)})`:''} ${i.resolved&&i.resueltaPor?` · ✓ ${i.resueltaPor}`:''}</div>
+        <div class="inc-actions">
+          <button class="edit-inc-btn" onclick="openEditIncModal('${i.id}')">✏ Editar incidencia</button>
+          ${!i.resolved?`<button class="resolve-btn" style="margin-left:auto" onclick="resolveInc('${i.id}')">Resolver ✓</button>`:''}
+        </div>
       </div>`;
     el.innerHTML=
       (open.length  ?`<div class="sec-title">Abiertas (${open.length})</div>${open.map(mkCard).join('')}`:'') +
