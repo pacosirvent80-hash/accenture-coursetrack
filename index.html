@@ -1109,15 +1109,16 @@ function updateUserChip() {
 function showLoginModal() {
   const ol = document.getElementById('loginOverlay');
   const ul = document.getElementById('userList');
-  ul.innerHTML = USERS.map(u=>`
-    <button class="user-btn" onclick="pickUser(${JSON.stringify(u)})">
+  ul.innerHTML = USERS.map((u,i)=>`
+    <button class="user-btn" onclick="pickUser(${i})">
       <div class="u-avatar">${u.charAt(0).toUpperCase()}</div>
       ${u}
     </button>`).join('');
   ol.classList.remove('hidden');
 }
 
-function pickUser(name) {
+function pickUser(idx) {
+  const name = typeof idx === 'number' ? USERS[idx] : idx;
   activeUser = name;
   localStorage.setItem(USER_KEY, name);
   document.getElementById('loginOverlay').classList.add('hidden');
