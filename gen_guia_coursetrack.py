@@ -304,7 +304,23 @@ add_para(doc,
     'también en Google Sheets.',
     space_after=8)
 
-add_heading(doc, '4.2 Eliminar un curso', 2)
+add_heading(doc, '4.2 Editar un curso', 2)
+add_para(doc,
+    'Para modificar los datos de un curso ya creado, abrir su panel de detalle y pulsar '
+    '✏ Editar curso en la barra de acciones inferior. El modal se abre con todos los '
+    'campos pre-rellenados y permite modificar:')
+add_bullet(doc, 'Nombre del curso')
+add_bullet(doc, 'Código interno')
+add_bullet(doc, 'Proveedor (selector predefinido)')
+add_bullet(doc, 'Estándar SCORM')
+add_bullet(doc, 'Duración estimada')
+add_bullet(doc, 'Idioma (selector predefinido)')
+add_bullet(doc, 'Notas internas')
+add_para(doc,
+    'Al confirmar, los cambios se guardan inmediatamente y se sincronizan con Google Sheets.',
+    space_after=8)
+
+add_heading(doc, '4.3 Eliminar un curso', 2)
 add_para(doc,
     'Desde el panel de detalle del curso, el botón 🗑 (esquina inferior derecha) elimina el curso '
     'tras pedir confirmación. Esta acción es irreversible en la sesión actual; si se trabaja '
@@ -351,30 +367,58 @@ add_bullet(doc, 'Severidad: Alta, Media o Baja')
 add_bullet(doc, 'Versión en la que se detectó')
 add_bullet(doc, 'Título y descripción detallada')
 add_bullet(doc, 'Fecha de detección y, si está resuelta, texto de resolución')
+add_para(doc,
+    'Cada tarjeta incluye una barra de acciones en la parte inferior con los botones '
+    '✏ Editar incidencia (disponible siempre) y Resolver ✓ (solo en incidencias abiertas).',
+    space_after=8)
 
 add_heading(doc, '6.4 Acciones desde el panel', 2)
-add_bullet(doc, '↔ Cambiar estado: mueve el curso al siguiente estado del ciclo.', bold_start='↔ Cambiar estado:')
-add_bullet(doc, '+ Nueva versión: registra una entrega mayor del proveedor (p. ej. de v1.x a v2.0).', bold_start='+ Nueva versión:')
-add_bullet(doc, '⚡ Incidencia: registra un nuevo error detectado en la revisión actual.', bold_start='⚡ Incidencia:')
+add_para(doc, 'La barra de acciones en la parte inferior del panel contiene:')
+add_bullet(doc, '✏ Editar curso: abre el modal de edición con todos los campos del curso pre-rellenados.', bold_start='✏ Editar curso:')
+add_bullet(doc, '↔ Cambiar estado: mueve el curso al siguiente estado del ciclo y crea una versión menor.', bold_start='↔ Cambiar estado:')
+add_bullet(doc, '+ Nueva versión: registra una reentrega mayor del proveedor (p. ej. de v1.x a v2.0).', bold_start='+ Nueva versión:')
+add_bullet(doc, '⚡ Nueva incidencia: abre el formulario para registrar un nuevo error detectado en la revisión.', bold_start='⚡ Nueva incidencia:')
 add_bullet(doc, '🗑: elimina el curso completo (con confirmación).', bold_start='🗑:')
 
 # ── 7. REGISTRAR INCIDENCIA ───────────────────────────────────────────────────
-add_heading(doc, '7. Registrar una incidencia', 1, AZUL_MARCA)
+add_heading(doc, '7. Gestión de incidencias', 1, AZUL_MARCA)
 add_para(doc,
-    'Desde el panel de detalle → botón ⚡ Incidencia. El formulario solicita:')
+    'Las incidencias registran los errores o problemas detectados durante la revisión '
+    'de un curso. Cada incidencia queda asociada a la versión activa del curso en el '
+    'momento del registro y se muestra en la pestaña Incidencias del panel de detalle.')
+
+add_heading(doc, '7.1 Registrar una nueva incidencia', 2)
+add_para(doc,
+    'Desde el panel de detalle → botón ⚡ Nueva incidencia. El formulario solicita:')
 add_bullet(doc, 'Categoría: tipo de problema detectado (técnico, contenido, accesibilidad, etc.)')
 add_bullet(doc, 'Severidad: Alta (bloquea la publicación), Media (requiere corrección antes de publicar) o Baja (mejora no urgente).')
 add_bullet(doc, 'Título: resumen en una línea del problema.')
 add_bullet(doc, 'Descripción detallada: pasos para reproducir, entorno afectado, impacto en el alumno.')
 add_bullet(doc, 'Fecha de detección.')
 add_para(doc,
-    'La incidencia queda asociada a la versión activa del curso en el momento del registro. '
     'Al confirmar, la app cambia automáticamente a la pestaña Incidencias del panel.',
     space_after=8)
 
-add_heading(doc, '7.1 Resolver una incidencia', 2)
+add_heading(doc, '7.2 Editar una incidencia', 2)
 add_para(doc,
-    'En la pestaña Incidencias, cada tarjeta abierta muestra el botón Resolver ✓. '
+    'Todas las incidencias (abiertas y resueltas) pueden editarse en cualquier momento. '
+    'En la pestaña Incidencias, cada tarjeta muestra el botón ✏ Editar incidencia '
+    'en su barra de acciones inferior. El modal de edición incluye todos los campos:')
+add_bullet(doc, 'Categoría y severidad')
+add_bullet(doc, 'Título y descripción detallada')
+add_bullet(doc, 'Fecha de detección')
+add_bullet(doc, 'Estado (Abierta / Resuelta) — al marcar como Resuelta aparece el campo de texto de resolución')
+add_bullet(doc, 'Texto de resolución (editable si la incidencia está resuelta)')
+add_para(doc,
+    'Los campos de trazabilidad (Creada por, Última edición, Resuelta por) se muestran '
+    'en modo solo lectura dentro del modal. Al guardar, se registran editadoPor '
+    'y fechaEdicion con el usuario activo y la fecha actual.',
+    color=GRIS_TEXTO, space_after=8)
+
+add_heading(doc, '7.3 Resolver una incidencia', 2)
+add_para(doc,
+    'En la pestaña Incidencias, cada tarjeta abierta muestra el botón Resolver ✓ '
+    'en su barra de acciones. '
     'Al pulsarlo se pide un texto de resolución (opcional) y la incidencia pasa a Resuelta, '
     'con su tarjeta marcada en verde. Las incidencias resueltas se conservan en el historial; '
     'no se eliminan.',

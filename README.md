@@ -80,6 +80,21 @@ const LANGUAGES = [
 
 ---
 
+## Funcionalidades principales
+
+| Acción | Cómo se hace |
+|---|---|
+| Crear curso | Botón **+ Nuevo curso** en la cabecera |
+| **Editar curso** | Botón **✏ Editar curso** en el pie del panel de detalle |
+| Cambiar estado | Botón **↔ Cambiar estado** en el pie del panel |
+| Nueva versión mayor | Botón **+ Nueva versión** en el pie del panel |
+| Registrar incidencia | Botón **⚡ Nueva incidencia** en el pie del panel |
+| **Editar incidencia** | Botón **✏ Editar incidencia** en cada tarjeta de incidencia |
+| Resolver incidencia | Botón **Resolver ✓** en cada tarjeta de incidencia abierta |
+| Eliminar curso | Botón **🗑** en el pie del panel (pide confirmación) |
+
+---
+
 ## Trazabilidad por usuario
 
 Cada acción registrada en la app incluye el nombre del usuario activo:
