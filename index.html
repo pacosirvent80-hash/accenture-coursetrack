@@ -631,7 +631,7 @@
       cursor: pointer; font-family: inherit; white-space: nowrap;
       transition: all .15s;
     }
-    .user-chip:hover { background: var(--primary); color: #fff; }
+    .user-chip { cursor: default; pointer-events: none; }
     @media (max-width: 768px) { .user-chip .btn-lbl { display: none; } }
 
     * { -webkit-tap-highlight-color: transparent; }
@@ -650,7 +650,7 @@
     <button class="conn-pill local" id="connPill" onclick="openModal('settings')" title="Configurar Google Sheets">
       ⚫ Local
     </button>
-    <button class="user-chip" id="userChip" onclick="changeUser()" title="Cambiar usuario">👤 <span class="btn-lbl">—</span></button>
+    <div class="user-chip" id="userChip" title="Usuario activo">👤 <span class="btn-lbl">—</span></div>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()" title="Exportar JSON">⬇ <span class="btn-lbl">Exportar</span></button>
     <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('settings')" title="Configuración">⚙</button>
@@ -793,8 +793,6 @@ const USERS = [
   'Paco Sirvent',
   'Lourdes',
   'Natalia',
-  'Ana García',
-  'Luis Martínez',
 ];
 
 const PROVIDERS = [
@@ -1144,7 +1142,7 @@ function pickUser(idx) {
   toast(`Bienvenid@ ${name.split(' ')[0]} 👋`);
 }
 
-function changeUser() { showLoginModal(); }
+function changeUser() { /* bloqueado — el usuario no puede cambiarse una vez elegido */ }
 
 function getFiltered() {
   const q    = document.getElementById('q').value.toLowerCase();
