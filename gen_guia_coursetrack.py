@@ -292,10 +292,10 @@ add_para(doc,
     'Pulsar el botón + Nuevo curso en la cabecera abre un formulario modal con los campos:')
 add_bullet(doc, 'Nombre del curso (obligatorio)')
 add_bullet(doc, 'Código interno (obligatorio, p. ej. CIB-001)')
-add_bullet(doc, 'Proveedor (obligatorio)')
+add_bullet(doc, 'Proveedor (obligatorio) — selector con la lista predefinida: Accenture, INAP, Mercadona, Test Provider.')
 add_bullet(doc, 'Estándar técnico: SCORM 1.2, SCORM 2004, xAPI (Tin Can), cmi5 o HTML sin tracking')
 add_bullet(doc, 'Duración estimada (p. ej. 45 min)')
-add_bullet(doc, 'Idioma (por defecto Español)')
+add_bullet(doc, 'Idioma — selector con Español, Inglés, Catalán, Euskera y Gallego (por defecto Español).')
 add_bullet(doc, 'Estado inicial (seleccionable entre los siete estados del flujo)')
 add_bullet(doc, 'Notas internas (observaciones para la oficina técnica)')
 add_para(doc,
@@ -454,11 +454,16 @@ add_bullet(doc, 'La columna "Por" de la tabla desktop muestra el responsable del
 add_bullet(doc, 'En móvil, la tarjeta de cada curso muestra el primer nombre del último modificador.')
 add_bullet(doc, 'Todos los encabezados de columna son ordenables con un clic.')
 
-add_heading(doc, '9.4 Gestión de la lista de usuarios', 2)
+add_heading(doc, '9.4 Gestión de las listas predefinidas', 2)
 add_para(doc,
-    'La lista de usuarios está hardcodeada en index.html. Para añadir o eliminar un usuario:')
-add_bullet(doc, 'Abrir index.html y localizar el array USERS (aproximadamente en la línea 792).')
-add_bullet(doc, 'Editar la lista de nombres.')
+    'Tres arrays hardcodeados en index.html (~línea 792) controlan los valores disponibles '
+    'en los selectores de la aplicación:')
+add_bullet(doc, 'USERS — miembros del equipo que pueden identificarse al acceder.', bold_start='USERS')
+add_bullet(doc, 'PROVIDERS — proveedores disponibles en el filtro del toolbar y en el formulario de alta de curso.', bold_start='PROVIDERS')
+add_bullet(doc, 'LANGUAGES — idiomas disponibles en el formulario de alta de curso (el primero es el valor por defecto).', bold_start='LANGUAGES')
+add_para(doc, 'Para añadir o eliminar valores en cualquiera de las tres listas:')
+add_bullet(doc, 'Abrir index.html y localizar los arrays (aproximadamente en la línea 792).')
+add_bullet(doc, 'Editar la lista de valores.')
 add_bullet(doc, 'Hacer git push. GitHub Pages actualiza en 1–2 minutos.')
 add_note(doc,
     '⚠  La selección de usuario no es autenticación: cualquier persona con acceso a la URL '

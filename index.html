@@ -788,11 +788,28 @@ const LS_KEY   = 'coursetrack_v1';
 const GAS_KEY  = 'coursetrack_gas_url';
 const USER_KEY = 'coursetrack_user';
 
-// ── Editar esta lista para añadir/quitar usuarios del equipo ──────
+// ── Editar estas listas para añadir/quitar valores ────────────────
 const USERS = [
   'Paco Sirvent',
+  'Lourdes',
+  'Natalia',
   'Ana García',
   'Luis Martínez',
+];
+
+const PROVIDERS = [
+  'Accenture',
+  'INAP',
+  'Mercadona',
+  'Test Provider',
+];
+
+const LANGUAGES = [
+  'Español',
+  'Inglés',
+  'Catalán',
+  'Euskera',
+  'Gallego',
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -1076,12 +1093,13 @@ function renderStats() {
 function filterStat(key) { document.getElementById('fStat').value=key; render(); }
 
 function renderFilters() {
-  // Proveedores
+  // Proveedores: lista fija + cualquier proveedor extra que venga de los datos
   const provSel = document.getElementById('fProv');
   const curProv = provSel.value;
-  const provs = [...new Set(courses.map(c=>c.provider))].sort();
+  const extraProvs = courses.map(c=>c.provider).filter(p=>p&&!PROVIDERS.includes(p));
+  const allProvs = [...PROVIDERS, ...[...new Set(extraProvs)].sort()];
   provSel.innerHTML = '<option value="">Todos los proveedores</option>' +
-    provs.map(p=>`<option value="${p}"${p===curProv?' selected':''}>${p}</option>`).join('');
+    allProvs.map(p=>`<option value="${p}"${p===curProv?' selected':''}>${p}</option>`).join('');
 
   // Usuarios (desde modificadoPor de todas las versiones)
   const userSel = document.getElementById('fUser');
@@ -1408,7 +1426,7 @@ function doPost(e) {
         <div class="fg"><label>Código *</label>
           <input id="f_code" type="text" placeholder="CIB-001"></div>
         <div class="fg"><label>Proveedor *</label>
-          <input id="f_prov" type="text" placeholder="eLearning Solutions SL"></div>
+          <select id="f_prov">${PROVIDERS.map(p=>`<option>${p}</option>`).join('')}</select></div>
       </div>
       <div class="f2">
         <div class="fg"><label>Estándar SCORM</label>
@@ -1422,7 +1440,7 @@ function doPost(e) {
       </div>
       <div class="f2">
         <div class="fg"><label>Idioma</label>
-          <input id="f_lang" type="text" placeholder="Español" value="Español"></div>
+          <select id="f_lang">${LANGUAGES.map(l=>`<option>${l}</option>`).join('')}</select></div>
         <div class="fg"><label>Estado inicial</label>
           <select id="f_stat">
             ${Object.entries(STATUS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}

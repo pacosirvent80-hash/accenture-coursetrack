@@ -43,21 +43,40 @@ La aplicación es un fichero HTML autocontenido sin dependencias externas: sin f
 
 ---
 
-## Usuarios del equipo
+## Listas predefinidas
 
-La lista de usuarios está hardcodeada en `index.html` (línea ~792):
+Tres arrays hardcodeados en `index.html` (~línea 792) controlan los valores disponibles en los selectores. Para modificarlos: editar el array y hacer `git push` — GitHub Pages actualiza en 1–2 minutos.
 
 ```javascript
 const USERS = [
   'Paco Sirvent',
-  'Ana García',
-  'Luis Martínez',
+  'Lourdes',
+  'Natalia',
+  // añadir aquí más miembros del equipo
+];
+
+const PROVIDERS = [
+  'Accenture',
+  'INAP',
+  'Mercadona',
+  'Test Provider',
+  // añadir aquí más proveedores
+];
+
+const LANGUAGES = [
+  'Español',
+  'Inglés',
+  'Catalán',
+  'Euskera',
+  'Gallego',
 ];
 ```
 
-Para **añadir o quitar un usuario**: editar este array y hacer `git push`. GitHub Pages actualiza en 1–2 minutos.
+**Usuarios:** al abrir la app por primera vez en un navegador, aparece un selector que no puede cerrarse sin elegir un nombre. El nombre queda en `localStorage`. El chip `👤` de la cabecera permite cambiarlo en cualquier momento.
 
-Al abrir la app por primera vez (o desde un navegador nuevo), aparece un selector de usuario que no puede cerrarse sin elegir un nombre. El nombre queda guardado en `localStorage` del navegador. El usuario puede cambiarse en cualquier momento desde el chip `👤` de la cabecera.
+**Proveedores:** el filtro del toolbar siempre muestra los valores de `PROVIDERS`. Si hay cursos con proveedores no incluidos en la lista, también aparecen (compatibilidad con datos existentes).
+
+**Idiomas:** selector en el formulario de alta de curso. El primero de la lista (`Español`) es el valor por defecto.
 
 ---
 
