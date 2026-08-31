@@ -49,7 +49,7 @@ Tres arrays hardcodeados en `index.html` (~línea 792) controlan los valores dis
 
 ```javascript
 const USERS = [
-  'Paco Sirvent',
+  'Paco',
   'Lourdes',
   'Natalia',
   // añadir aquí más miembros del equipo
