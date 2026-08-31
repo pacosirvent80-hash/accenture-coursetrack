@@ -504,25 +504,33 @@
       .stats { grid-template-columns: repeat(3,1fr); }
       .info-grid { grid-template-columns: 1fr; }
       .f2 { grid-template-columns: 1fr; }
-      .col-prov, .col-ver, .col-days { display: none; }
+      .col-prov, .col-ver, .col-days, .col-by { display: none; }
       .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
 
-    /* ── Teléfonos ≤ 600px ────────────────────────────────── */
+    /* ── Móvil ≤ 768px (complementa el bloque ya existente) ── */
+    @media (max-width: 768px) {
+      /* Cabecera: botones compactos, ocultar etiquetas de texto */
+      .hdr { padding: 0 12px; gap: 6px; }
+      .hdr-logo { font-size: 15px; }
+      .hdr-logo .icon { width: 28px; height: 28px; font-size: 13px; }
+      .hdr-actions { gap: 4px; }
+      .btn-lbl { display: none; }
+      .conn-pill { font-size: 11px; padding: 3px 9px; }
+      .hdr-actions .btn-ghost { width: 36px; height: 36px; padding: 0; justify-content: center; font-size: 14px; }
+      .hdr-actions .btn-icon  { width: 36px; height: 36px; }
+      .hdr-actions .btn-primary { padding: 0 12px; height: 36px; font-size: 13px; }
+      /* Tabla: el JS renderiza tarjetas */
+      thead { display: none !important; }
+      .table-wrap { background: transparent; border: none; box-shadow: none; overflow: visible; padding: 0; }
+      table { display: block; width: 100%; }
+      tbody { display: flex !important; flex-direction: column; gap: 8px; }
+    }
+
+    /* ── Teléfonos pequeños ≤ 600px ───────────────────────── */
     @media (max-width: 600px) {
       :root { --hdr-h: 52px; }
       body { font-size: 13px; }
-
-      /* Cabecera compacta: botones ghost → cuadrados de icono */
-      .hdr { padding: 0 10px; gap: 4px; }
-      .hdr-logo { font-size: 14px; gap: 7px; }
-      .hdr-logo .icon { width: 28px; height: 28px; font-size: 13px; }
-      .hdr-actions { gap: 3px; }
-      .btn-lbl { display: none; }
-      .conn-pill { font-size: 10px; padding: 3px 7px; gap: 3px; }
-      .hdr-actions .btn-ghost { width: 34px; height: 34px; padding: 0; justify-content: center; }
-      .hdr-actions .btn-icon  { width: 34px; height: 34px; }
-      .hdr-actions .btn-primary { padding: 0 10px; height: 34px; font-size: 13px; }
 
       /* Espaciado principal */
       .main { padding: 12px 10px; }
@@ -583,6 +591,49 @@
       .panel-foot .btn-danger { width: auto; align-self: flex-end; }
     }
 
+    /* ── Login modal ─────────────────────────────────── */
+    .login-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(15,23,42,.75); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-overlay.hidden { display: none; }
+    .login-box {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 36px 28px 28px; width: min(380px, 92vw);
+      box-shadow: var(--shadow-lg); text-align: center;
+    }
+    .login-box h2 { font-size: 20px; font-weight: 700; margin: 10px 0 6px; }
+    .login-box p  { font-size: 13px; color: var(--text-2); margin-bottom: 20px; }
+    .user-grid { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+    .user-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border); background: var(--surface);
+      cursor: pointer; font-size: 14px; font-weight: 500;
+      color: var(--text); transition: all .15s; width: 100%;
+      font-family: inherit;
+    }
+    .user-btn:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary-dark); }
+    .u-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+
+    /* ── User chip en cabecera ───────────────────────── */
+    .user-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px;
+      background: var(--primary-light); border: 1.5px solid var(--primary);
+      color: var(--primary-dark); font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+      transition: all .15s;
+    }
+    .user-chip:hover { background: var(--primary); color: #fff; }
+    @media (max-width: 768px) { .user-chip .btn-lbl { display: none; } }
+
     * { -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
@@ -599,6 +650,7 @@
     <button class="conn-pill local" id="connPill" onclick="openModal('settings')" title="Configurar Google Sheets">
       ⚫ Local
     </button>
+    <button class="user-chip" id="userChip" onclick="changeUser()" title="Cambiar usuario">👤 <span class="btn-lbl">—</span></button>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()" title="Exportar JSON">⬇ <span class="btn-lbl">Exportar</span></button>
     <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('settings')" title="Configuración">⚙</button>
@@ -627,6 +679,9 @@
     <select id="fProv" class="sel" onchange="render()">
       <option value="">Todos los proveedores</option>
     </select>
+    <select id="fUser" class="sel" onchange="render()">
+      <option value="">Todos los usuarios</option>
+    </select>
     <div class="tb-space"></div>
     <span id="countLbl" class="count-lbl"></span>
   </div>
@@ -635,11 +690,12 @@
       <thead>
         <tr>
           <th class="sort" onclick="sortBy('name')">Curso</th>
-          <th class="col-prov">Proveedor</th>
-          <th class="col-ver">Versión</th>
-          <th>Estado</th>
-          <th class="col-inc">Incidencias</th>
-          <th class="col-days">Días</th>
+          <th class="sort col-prov" onclick="sortBy('provider')">Proveedor</th>
+          <th class="sort col-ver" onclick="sortBy('number')">Versión</th>
+          <th class="sort" onclick="sortBy('status')">Estado</th>
+          <th class="col-inc">Inc.</th>
+          <th class="sort col-days" onclick="sortBy('date')">Días</th>
+          <th class="sort col-by" onclick="sortBy('modificadoPor')">Por</th>
           <th class="sort col-updated" onclick="sortBy('updatedAt')">Actualizado</th>
         </tr>
       </thead>
@@ -695,6 +751,16 @@
   </div>
 </div>
 
+<!-- ── Login ── -->
+<div class="login-overlay hidden" id="loginOverlay">
+  <div class="login-box">
+    <div style="font-size:42px;line-height:1">👤</div>
+    <h2>¿Quién eres?</h2>
+    <p>Selecciona tu nombre para continuar</p>
+    <div class="user-grid" id="userList"></div>
+  </div>
+</div>
+
 <!-- ── Toast ── -->
 <div id="toast"></div>
 <input type="file" id="fileInput" accept=".json" style="display:none" onchange="onFileImport(event)">
@@ -717,9 +783,17 @@ const INC_CATS = [
   'SCORM / xAPI','Contenido','Diseño / UX','Técnico',
   'Estructura IMS','Evaluación','Vídeo / Audio','Accesibilidad','Otro'
 ];
-const SEVS    = ['Alta','Media','Baja'];
-const LS_KEY  = 'coursetrack_v1';       // localStorage: datos de cursos
-const GAS_KEY = 'coursetrack_gas_url';  // localStorage: URL del Apps Script
+const SEVS     = ['Alta','Media','Baja'];
+const LS_KEY   = 'coursetrack_v1';
+const GAS_KEY  = 'coursetrack_gas_url';
+const USER_KEY = 'coursetrack_user';
+
+// ── Editar esta lista para añadir/quitar usuarios del equipo ──────
+const USERS = [
+  'Paco Sirvent',
+  'Ana García',
+  'Luis Martínez',
+];
 
 // ══════════════════════════════════════════════════════════════════
 //  STATE
@@ -732,7 +806,8 @@ let selId     = null;
 let curTab    = 'info';
 let sortField = 'updatedAt';
 let sortDir   = -1;
-let confirmFn = null;
+let confirmFn  = null;
+let activeUser = localStorage.getItem(USER_KEY) || '';
 
 // ══════════════════════════════════════════════════════════════════
 //  UTILS
@@ -975,7 +1050,7 @@ function seed() {
 //  RENDER
 // ══════════════════════════════════════════════════════════════════
 
-function render() { renderStats(); renderProviders(); renderTable(); }
+function render() { renderStats(); renderFilters(); renderTable(); }
 
 function renderStats() {
   const bar = document.getElementById('statsBar');
@@ -1000,22 +1075,68 @@ function renderStats() {
 
 function filterStat(key) { document.getElementById('fStat').value=key; render(); }
 
-function renderProviders() {
-  const sel = document.getElementById('fProv');
-  const cur = sel.value;
+function renderFilters() {
+  // Proveedores
+  const provSel = document.getElementById('fProv');
+  const curProv = provSel.value;
   const provs = [...new Set(courses.map(c=>c.provider))].sort();
-  sel.innerHTML = '<option value="">Todos los proveedores</option>' +
-    provs.map(p=>`<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
+  provSel.innerHTML = '<option value="">Todos los proveedores</option>' +
+    provs.map(p=>`<option value="${p}"${p===curProv?' selected':''}>${p}</option>`).join('');
+
+  // Usuarios (desde modificadoPor de todas las versiones)
+  const userSel = document.getElementById('fUser');
+  const curU    = userSel.value;
+  const users   = [...new Set(
+    courses.flatMap(c=>c.versions.map(v=>v.modificadoPor||'').filter(Boolean))
+  )].sort();
+  userSel.innerHTML = '<option value="">Todos los usuarios</option>' +
+    users.map(u=>`<option value="${u}"${u===curU?' selected':''}>${u}</option>`).join('');
 }
+
+// ── Funciones de usuario ──────────────────────────────────────────
+function currentUser() { return activeUser; }
+
+function updateUserChip() {
+  const el = document.getElementById('userChip');
+  if (!el) return;
+  const first = activeUser ? activeUser.split(' ')[0] : '—';
+  el.innerHTML = `👤 <span class="btn-lbl">${first}</span>`;
+  el.title = activeUser
+    ? `Conectado como ${activeUser} — clic para cambiar`
+    : 'Seleccionar usuario';
+}
+
+function showLoginModal() {
+  const ol = document.getElementById('loginOverlay');
+  const ul = document.getElementById('userList');
+  ul.innerHTML = USERS.map(u=>`
+    <button class="user-btn" onclick="pickUser(${JSON.stringify(u)})">
+      <div class="u-avatar">${u.charAt(0).toUpperCase()}</div>
+      ${u}
+    </button>`).join('');
+  ol.classList.remove('hidden');
+}
+
+function pickUser(name) {
+  activeUser = name;
+  localStorage.setItem(USER_KEY, name);
+  document.getElementById('loginOverlay').classList.add('hidden');
+  updateUserChip();
+  toast(`Bienvenid@ ${name.split(' ')[0]} 👋`);
+}
+
+function changeUser() { showLoginModal(); }
 
 function getFiltered() {
   const q    = document.getElementById('q').value.toLowerCase();
   const stat = document.getElementById('fStat').value;
   const prov = document.getElementById('fProv').value;
+  const user = document.getElementById('fUser').value;
   return courses.filter(c=>{
     const s = curVer(c)?.status;
     if (stat && s!==stat) return false;
     if (prov && c.provider!==prov) return false;
+    if (user && curVer(c)?.modificadoPor!==user) return false;
     if (q && !`${c.name} ${c.code} ${c.provider}`.toLowerCase().includes(q)) return false;
     return true;
   }).sort((a,b)=>{
@@ -1029,7 +1150,7 @@ function renderTable() {
   const list  = getFiltered();
   const tbody = document.getElementById('tbody');
   const empty = document.getElementById('emptyState');
-  const mobile = window.innerWidth < 600;
+  const mobile = window.innerWidth < 768;
 
   document.getElementById('countLbl').textContent =
     list.length===courses.length
@@ -1057,6 +1178,7 @@ function renderTable() {
           </div>
           <div class="m-card-bot">
             ${badge(stat)}
+            ${cv?.modificadoPor?`<span style="font-size:11px;color:var(--text-3)">👤${cv.modificadoPor.split(' ')[0]}</span>`:''}
             <span class="days ${dc}">${days}d</span>
           </div>
         </td>
@@ -1076,6 +1198,7 @@ function renderTable() {
         <td>${badge(stat)}</td>
         <td class="col-inc">${oi?`<span class="inc-count">${oi}</span>`:'<span style="color:var(--text-3);font-size:12px">—</span>'}</td>
         <td class="col-days"><span class="days ${dc}">${days}d</span></td>
+        <td class="col-by" style="font-size:12px;color:var(--text-2)">${cv?.modificadoPor||'—'}</td>
         <td class="col-updated" style="font-size:12px;color:var(--text-2)">${fmt(c.updatedAt)}</td>
       </tr>`;
     }).join('');
@@ -1145,6 +1268,7 @@ function renderTab() {
             <div class="tl-date">${fmt(v.date)}</div>
             <div class="tl-title"><span class="vtag">v${v.number}</span>&nbsp;${badge(v.status)}</div>
             ${v.notes?`<div class="tl-note">${v.notes}</div>`:''}
+            ${v.modificadoPor?`<div style="margin-top:4px;font-size:11px;color:var(--text-3)">👤 ${v.modificadoPor}</div>`:''}
             ${(v.incidents||[]).length?`<div style="margin-top:4px;font-size:11px;color:#EF4444">⚡ ${v.incidents.length} incidencia(s)</div>`:''}
           </div>`).join('')}
       </div>`;
@@ -1163,7 +1287,7 @@ function renderTab() {
         <div class="inc-title">${i.title}</div>
         <div class="inc-desc">${i.description}</div>
         ${i.resolved&&i.resolution?`<div class="inc-foot">📝 ${i.resolution}</div>`:''}
-        <div class="inc-foot">📅 ${fmt(i.date)}</div>
+        <div class="inc-foot">📅 ${fmt(i.date)}${i.creadaPor?` · 👤 ${i.creadaPor}`:''}${i.resolved&&i.resueltaPor?` · ✓ ${i.resueltaPor}`:''}</div>
       </div>`;
     el.innerHTML=
       (open.length  ?`<div class="sec-title">Abiertas (${open.length})</div>${open.map(mkCard).join('')}`:'') +
@@ -1174,7 +1298,7 @@ function renderTab() {
 function resolveInc(iid) {
   const c=getCourse(selId);
   const res=prompt('Resolución (opcional):')??' ';
-  c.versions.forEach(v=>{ const i=(v.incidents||[]).find(x=>x.id===iid); if(i){i.resolved=true;i.resolution=res;} });
+  c.versions.forEach(v=>{ const i=(v.incidents||[]).find(x=>x.id===iid); if(i){i.resolved=true;i.resolution=res;i.resueltaPor=activeUser;} });
   c.updatedAt=today();
   save(); renderPanel(); renderTable();
   toast('Incidencia marcada como resuelta ✓');
@@ -1318,7 +1442,7 @@ function doPost(e) {
         language:document.getElementById('f_lang').value,
         notes:document.getElementById('f_notes').value,
         createdAt:now, updatedAt:now,
-        versions:[{id:uid(),number:'1.0',status:document.getElementById('f_stat').value,date:now,notes:'Alta inicial.',incidents:[]}]
+        versions:[{id:uid(),number:'1.0',status:document.getElementById('f_stat').value,date:now,notes:'Alta inicial.',incidents:[],modificadoPor:activeUser}]
       });
       save(); return true;
     };
@@ -1343,7 +1467,7 @@ function doPost(e) {
       const sel=document.querySelector('.status-opt.sel');
       if (!sel) { toast('Selecciona un estado'); return false; }
       const key=sel.dataset.k, notes=document.getElementById('f_sNotes').value, now=today();
-      c.versions.push({id:uid(),number:nextMinor(cv.number),status:key,date:now,notes,incidents:[]});
+      c.versions.push({id:uid(),number:nextMinor(cv.number),status:key,date:now,notes,incidents:[],modificadoPor:activeUser});
       c.updatedAt=now; save(); return true;
     };
   }
@@ -1374,7 +1498,7 @@ function doPost(e) {
         status:document.getElementById('f_vstat').value,
         date:document.getElementById('f_vdate').value||today(),
         notes:document.getElementById('f_vnotes').value,
-        incidents:[]
+        incidents:[], modificadoPor:activeUser
       });
       c.updatedAt=today(); save(); return true;
     };
@@ -1411,7 +1535,7 @@ function doPost(e) {
         severity:document.getElementById('f_isev').value,
         title:tit, description:desc,
         date:document.getElementById('f_idate').value||today(),
-        resolved:false, resolution:''
+        resolved:false, resolution:'', creadaPor:activeUser
       });
       c.updatedAt=today(); save(); switchTab('incidents'); return true;
     };
@@ -1515,6 +1639,8 @@ window.addEventListener('resize', () => {
 
 init();
 adjustLayout();
+updateUserChip();
+if (!activeUser) showLoginModal();
 </script>
 </body>
 </html>
