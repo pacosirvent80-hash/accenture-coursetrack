@@ -13,7 +13,7 @@ Herramienta web de gestión del ciclo de vida de cursos eLearning para oficinas 
 | **Google Apps Script (backend)** | `https://script.google.com/macros/s/AKfycbziQw_JwEW5MZDlOk3AaBLzTfhtfB3U4riXq_NnU1Fzy2VTJTITllKWNlAi7Jwvy2d0/exec` |
 
 > ⚠️ La URL del Apps Script otorga acceso de lectura y escritura sin autenticación.  
-> No publicarla en canales abiertos. Cada usuario la introduce manualmente en la configuración de su navegador — nunca está embebida en el código fuente.
+> No publicarla en canales abiertos. Cada usuario la introduce manualmente en la configuración de su navegador — nunca está embebida en el código fuente..
 
 ---
 
@@ -21,10 +21,12 @@ Herramienta web de gestión del ciclo de vida de cursos eLearning para oficinas 
 
 ```
 accenture-coursetrack/
-├── index.html                  # Aplicación completa (HTML + CSS + JS, fichero único autocontenido)
-├── README.md                   # Este fichero
-├── CourseTrack_Guia_Usuario.docx  # Guía de usuario completa
-└── gen_guia_coursetrack.py     # Script Python para regenerar la guía Word
+├── index.html                              # Aplicación completa (HTML + CSS + JS, fichero único autocontenido)
+├── README.md                               # Este fichero
+├── CourseTrack_Guia_Usuario.docx           # Guía de usuario completa
+├── gen_guia_coursetrack.py                 # Script Python para regenerar la guía de usuario
+├── CourseTrack_EspecificacionesTecnicas.docx  # Especificaciones técnicas y buenas prácticas
+└── gen_coursetrack_tech.py                 # Script Python para regenerar las especificaciones técnicas
 ```
 
 La aplicación es un fichero HTML autocontenido sin dependencias externas: sin frameworks, sin librerías externas, sin servidor de aplicaciones.
