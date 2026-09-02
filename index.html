@@ -1845,16 +1845,33 @@ function exportJSON() {
 // ── CSV ───────────────────────────────────────────────────────────────────
 function exportCSV() {
   const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
-  const rows = [['Curso','Código','Proveedor','Formato','Idioma','Duración','Versión','Estado','Fecha versión','Modificado por','Incidencias abiertas','Notas curso']];
+  const HDR = [
+    'Curso','Código','Proveedor','Formato/SCORM','Idioma','Duración','Notas curso','Creado','Actualizado',
+    'Versión','Estado versión','Fecha versión','Modificado por','Notas versión',
+    'Categoría incidencia','Severidad','Título incidencia','Descripción incidencia',
+    'Fecha incidencia','Estado incidencia','Creada por','Editada por','Fecha edición','Resuelta por','Resolución'
+  ];
+  const rows = [HDR];
   courses.forEach(c => {
+    const cBase = [c.name,c.code,c.provider,c.scormVersion,c.language,c.duration,c.notes||'',c.createdAt||'',c.updatedAt||''];
     const vers = c.versions||[];
     if (!vers.length) {
-      rows.push([c.name,c.code,c.provider,c.scormVersion,c.language,c.duration,'—','—','','','0',c.notes||'']);
+      rows.push([...cBase,'','','','','','','','','','','','','','']);
     } else {
       vers.forEach(v => {
-        const abiertas = (v.incidents||[]).filter(i=>!i.resolved).length;
-        rows.push([c.name,c.code,c.provider,c.scormVersion,c.language,c.duration,
-          v.number,v.status,v.date,v.modificadoPor||'',abiertas,c.notes||'']);
+        const vBase = [v.number,v.status||'',v.date||'',v.modificadoPor||'',v.notes||''];
+        const incs = v.incidents||[];
+        if (!incs.length) {
+          rows.push([...cBase,...vBase,'','','','','','','','','','']);
+        } else {
+          incs.forEach(i => {
+            rows.push([...cBase,...vBase,
+              i.category||'',i.severity||'',i.title||'',i.description||'',
+              i.date||'',i.resolved?'Resuelta':'Abierta',
+              i.creadaPor||'',i.editadoPor||'',i.fechaEdicion||'',i.resueltaPor||'',i.resolution||''
+            ]);
+          });
+        }
       });
     }
   });
@@ -1956,10 +1973,10 @@ function exportExcel() {
   let ri2=0;
   courses.forEach(cr=>{(cr.versions||[]).forEach(v=>{const d=ri2%2===1,s=sh(d),n=(v.incidents||[]).length;r2.push({h:18,cells:[C(cr.name,s.B),C(cr.code,s.C),C(v.number,s.C),C((v.status||'').replace(/_/g,' '),ST[v.status]??14),C(v.date||'',s.C),C(v.modificadoPor||'—',s.C),C(n||'—',is(n,d)),C(v.notes||'',s.L)]});ri2++;});});
   // ── Hoja 3: Incidencias ───────────────────────────────────────────────
-  const w3=[28,9,16,11,35,50,11,12,13,13,13,40];
-  const r3=[{h:22,cells:['Curso','Versión','Categoría','Severidad','Título','Descripción','Fecha','Estado','Creada por','Editada por','Resuelta por','Resolución'].map(H)}];
+  const w3=[28,9,16,11,35,50,11,12,13,13,13,13,40];
+  const r3=[{h:22,cells:['Curso','Versión','Categoría','Severidad','Título','Descripción','Fecha','Estado','Creada por','Editada por','Fecha edición','Resuelta por','Resolución'].map(H)}];
   let ri3=0;
-  courses.forEach(cr=>{(cr.versions||[]).forEach(v=>{(v.incidents||[]).forEach(inc=>{const d=ri3%2===1,s=sh(d);r3.push({h:28,cells:[C(cr.name,s.B),C(v.number,s.C),C(inc.category||'',s.L),C(inc.severity||'',SV[inc.severity]??2),C(inc.title||'',s.B),C(inc.description||'',s.L),C(inc.date||'',s.C),C(inc.resolved?'Resuelta':'Abierta',inc.resolved?18:19),C(inc.creadaPor||'—',s.C),C(inc.editadoPor||'—',s.C),C(inc.resueltaPor||'—',s.C),C(inc.resolution||'',s.L)]});ri3++;});});});
+  courses.forEach(cr=>{(cr.versions||[]).forEach(v=>{(v.incidents||[]).forEach(inc=>{const d=ri3%2===1,s=sh(d);r3.push({h:28,cells:[C(cr.name,s.B),C(v.number,s.C),C(inc.category||'',s.L),C(inc.severity||'',SV[inc.severity]??2),C(inc.title||'',s.B),C(inc.description||'',s.L),C(inc.date||'',s.C),C(inc.resolved?'Resuelta':'Abierta',inc.resolved?18:19),C(inc.creadaPor||'—',s.C),C(inc.editadoPor||'—',s.C),C(inc.fechaEdicion||'—',s.C),C(inc.resueltaPor||'—',s.C),C(inc.resolution||'',s.L)]});ri3++;});});});
   // ── Generar ZIP y descargar ───────────────────────────────────────────
   const zip=makeZip([
     {name:'[Content_Types].xml',        data:CT},
