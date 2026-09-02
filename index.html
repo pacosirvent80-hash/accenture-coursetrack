@@ -86,6 +86,7 @@
     }
     .export-menu button:hover { background: var(--surface-2); }
     .export-menu hr { border: none; border-top: 1px solid var(--border); margin: 0; }
+    .export-menu.hidden { display: none; }
     @media (max-width: 768px) {
       .export-menu { min-width: 130px; right: 0; left: auto; }
       .export-menu button { padding: 13px 14px; font-size: 14px; }
@@ -733,7 +734,7 @@
       <div class="export-menu hidden" id="exportMenu">
         <button onclick="exportJSON(); closeExportMenu()">📄 JSON</button>
         <button onclick="exportCSV(); closeExportMenu()">📊 CSV</button>
-        <button onclick="exportExcel(); closeExportMenu()">🟢 Excel (.xls)</button>
+        <button onclick="exportExcel(); closeExportMenu()">🟢 Excel (.xlsx)</button>
       </div>
     </div>
     <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
