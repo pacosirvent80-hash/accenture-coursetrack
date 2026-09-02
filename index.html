@@ -69,6 +69,24 @@
     html[data-theme="dark"] .modal-box { background: var(--surface); }
     html[data-theme="dark"] .panel     { background: var(--surface); }
 
+    /* ── Export dropdown ──────────────────────────────── */
+    .export-wrap { position: relative; }
+    .export-menu {
+      position: absolute; top: calc(100% + 6px); right: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      min-width: 150px; z-index: 200; overflow: hidden;
+    }
+    .export-menu button {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 9px 14px;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 13px; color: var(--text);
+      text-align: left; transition: background .12s;
+    }
+    .export-menu button:hover { background: var(--surface-2); }
+    .export-menu hr { border: none; border-top: 1px solid var(--border); margin: 0; }
+
     /* Toggle button */
     .theme-toggle {
       background: none; border: 1.5px solid var(--border);
@@ -705,7 +723,14 @@
       ⚫ Local
     </button>
     <div class="user-chip" id="userChip" title="Usuario activo">👤 <span class="btn-lbl">—</span></div>
-    <button class="btn btn-ghost btn-sm" onclick="exportJSON()" title="Exportar JSON">⬇ <span class="btn-lbl">Exportar</span></button>
+    <div class="export-wrap">
+      <button class="btn btn-ghost btn-sm" onclick="toggleExportMenu(event)" title="Exportar">⬇ <span class="btn-lbl">Exportar</span></button>
+      <div class="export-menu hidden" id="exportMenu">
+        <button onclick="exportJSON(); closeExportMenu()">📄 JSON</button>
+        <button onclick="exportCSV(); closeExportMenu()">📊 CSV</button>
+        <button onclick="exportExcel(); closeExportMenu()">🟢 Excel (.xls)</button>
+      </div>
+    </div>
     <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema"></button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('settings')" title="Configuración">⚙</button>
@@ -1789,6 +1814,18 @@ function disconnectGAS() {
 //  IMPORT / EXPORT
 // ══════════════════════════════════════════════════════════════════
 
+// ── Export dropdown ───────────────────────────────────────────────────────
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  const m = document.getElementById('exportMenu');
+  m.classList.toggle('hidden');
+}
+function closeExportMenu() {
+  document.getElementById('exportMenu').classList.add('hidden');
+}
+document.addEventListener('click', () => closeExportMenu());
+
+// ── JSON ──────────────────────────────────────────────────────────────────
 function exportJSON() {
   const blob=new Blob([JSON.stringify(courses,null,2)],{type:'application/json'});
   const a=Object.assign(document.createElement('a'),{
@@ -1796,7 +1833,221 @@ function exportJSON() {
     download:`coursetrack_${today()}.json`
   });
   a.click(); URL.revokeObjectURL(a.href);
-  toast('Datos exportados ✓');
+  toast('JSON exportado ✓');
+}
+
+// ── CSV ───────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const rows = [['Curso','Código','Proveedor','Formato','Idioma','Duración','Versión','Estado','Fecha versión','Modificado por','Incidencias abiertas','Notas curso']];
+  courses.forEach(c => {
+    const vers = c.versions||[];
+    if (!vers.length) {
+      rows.push([c.name,c.code,c.provider,c.scormVersion,c.language,c.duration,'—','—','','','0',c.notes||'']);
+    } else {
+      vers.forEach(v => {
+        const abiertas = (v.incidents||[]).filter(i=>!i.resolved).length;
+        rows.push([c.name,c.code,c.provider,c.scormVersion,c.language,c.duration,
+          v.number,v.status,v.date,v.modificadoPor||'',abiertas,c.notes||'']);
+      });
+    }
+  });
+  const csv = rows.map(r=>r.map(esc).join(',')).join('\r\n');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a = Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(blob), download:`coursetrack_${today()}.csv`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('CSV exportado ✓');
+}
+
+// ── EXCEL (SpreadsheetML) ─────────────────────────────────────────────────
+function exportExcel() {
+  const ESTADO_COLORS = {
+    entregado:     {bg:'#EEF2FF',fg:'#4338CA'},
+    en_revision:   {bg:'#F5F3FF',fg:'#7C3AED'},
+    incidencia:    {bg:'#FEF2F2',fg:'#DC2626'},
+    en_correccion: {bg:'#FFF7ED',fg:'#C2410C'},
+    aprobado:      {bg:'#F0FDF4',fg:'#15803D'},
+    publicado:     {bg:'#F0FDFA',fg:'#0F766E'},
+    en_pausa:      {bg:'#F8FAFC',fg:'#64748B'},
+  };
+  const SEV_COLORS = {
+    Alta:  {bg:'#FEF2F2',fg:'#DC2626'},
+    Media: {bg:'#FFF7ED',fg:'#C2410C'},
+    Baja:  {bg:'#F0FDF4',fg:'#15803D'},
+  };
+
+  // ── Generador de estilos ─────────────────────────────────────────────
+  const styles = {};
+  let styleIdx = 1;
+  function getStyle(opts={}) {
+    const key = JSON.stringify(opts);
+    if (!styles[key]) styles[key] = { id: 's'+styleIdx++, opts };
+    return styles[key].id;
+  }
+  const HDR    = getStyle({bg:'#1E3A5F', fg:'#FFFFFF', bold:true, wrap:true, halign:'Center'});
+  const NORMAL = getStyle({wrap:true});
+  const CENTER = getStyle({wrap:true, halign:'Center'});
+  const ROW2   = getStyle({bg:'#F7F9FC', wrap:true});
+  const ROW2C  = getStyle({bg:'#F7F9FC', wrap:true, halign:'Center'});
+  const BOLD   = getStyle({bold:true, wrap:true});
+  const BOLD2  = getStyle({bold:true, wrap:true, bg:'#F7F9FC'});
+
+  Object.entries(ESTADO_COLORS).forEach(([k,{bg,fg}])=>{
+    getStyle({bg,fg,halign:'Center',wrap:true,id:'est_'+k});
+    getStyle({bg,fg,halign:'Center',wrap:true,bg2:'#F7F9FC',id:'est2_'+k});
+  });
+  Object.entries(SEV_COLORS).forEach(([k,{bg,fg}])=>{
+    getStyle({bg,fg,halign:'Center',wrap:true,id:'sev_'+k});
+    getStyle({bg,fg,halign:'Center',wrap:true,bg2:'#F7F9FC',id:'sev2_'+k});
+  });
+  // resolved / open
+  getStyle({bg:'#F0FDF4',fg:'#15803D',halign:'Center',wrap:true,id:'res_ok'});
+  getStyle({bg:'#FEF2F2',fg:'#DC2626',halign:'Center',wrap:true,id:'res_no'});
+
+  function sid(opts) { return getStyle(opts); }
+  function estSid(estado, shade) {
+    const {bg,fg}=ESTADO_COLORS[estado]||{bg:'#F8FAFC',fg:'#64748B'};
+    return getStyle({bg,fg,halign:'Center',wrap:true,id:'est'+(shade?'2_':'_')+estado});
+  }
+  function sevSid(sev, shade) {
+    const {bg,fg}=SEV_COLORS[sev]||{bg:'#F8FAFC',fg:'#64748B'};
+    return getStyle({bg,fg,halign:'Center',wrap:true,id:'sev'+(shade?'2_':'_')+sev});
+  }
+
+  // ── XML helpers ───────────────────────────────────────────────────────
+  const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function cell(val, sid, type='String') {
+    return `<Cell ss:StyleID="${sid}"><Data ss:Type="${type}">${esc(val)}</Data></Cell>`;
+  }
+  function hdrRow(cols) {
+    return '<Row ss:Height="22">' + cols.map(c=>cell(c,HDR)).join('') + '</Row>';
+  }
+  function dataRow(cells, h=18) {
+    return `<Row ss:Height="${h}">${cells.join('')}</Row>`;
+  }
+  function col(w) { return `<Column ss:Width="${w}"/>`; }
+
+  // ── Hoja 1: Cursos ────────────────────────────────────────────────────
+  let sh1 = [
+    col(220),col(80),col(130),col(110),col(80),col(65),col(100),col(75),col(100),col(240),
+    hdrRow(['Nombre del curso','Código','Proveedor','SCORM / Formato','Idioma','Duración','Estado actual','Versión','Últ. modificación','Notas']),
+  ];
+  courses.forEach((c,i)=>{
+    const shade=i%2===1;
+    const v=(c.versions||[]).slice(-1)[0]||{};
+    const n=shade;
+    sh1.push(dataRow([
+      cell(c.name,    shade?BOLD2:BOLD),
+      cell(c.code,    shade?ROW2C:CENTER),
+      cell(c.provider,shade?ROW2:NORMAL),
+      cell(c.scormVersion,shade?ROW2:NORMAL),
+      cell(c.language,shade?ROW2C:CENTER),
+      cell(c.duration,shade?ROW2C:CENTER),
+      cell((v.status||'—').replace(/_/g,' '), estSid(v.status,shade)),
+      cell(v.number||'—', shade?ROW2C:CENTER),
+      cell(c.updatedAt||'', shade?ROW2C:CENTER),
+      cell(c.notes||'', shade?ROW2:NORMAL),
+    ]));
+  });
+
+  // ── Hoja 2: Versiones ─────────────────────────────────────────────────
+  let sh2 = [
+    col(220),col(80),col(60),col(100),col(75),col(100),col(75),col(240),
+    hdrRow(['Curso','Código','Versión','Estado','Fecha','Modificado por','Incidencias','Notas de versión']),
+  ];
+  let ri2=0;
+  courses.forEach(c=>{
+    (c.versions||[]).forEach(v=>{
+      const shade=ri2%2===1;
+      const ninc=(v.incidents||[]).length;
+      const incStyle = ninc>0 ? getStyle({fg:'#DC2626',halign:'Center',bold:true,wrap:true,bg:shade?'#F7F9FC':undefined})
+                               : getStyle({fg:'#15803D',halign:'Center',wrap:true,bg:shade?'#F7F9FC':undefined});
+      sh2.push(dataRow([
+        cell(c.name,   shade?BOLD2:BOLD),
+        cell(c.code,   shade?ROW2C:CENTER),
+        cell(v.number, shade?ROW2C:CENTER),
+        cell((v.status||'').replace(/_/g,' '), estSid(v.status,shade)),
+        cell(v.date||'', shade?ROW2C:CENTER),
+        cell(v.modificadoPor||'—', shade?ROW2C:CENTER),
+        cell(ninc||'—', incStyle),
+        cell(v.notes||'', shade?ROW2:NORMAL),
+      ]));
+      ri2++;
+    });
+  });
+
+  // ── Hoja 3: Incidencias ───────────────────────────────────────────────
+  let sh3 = [
+    col(180),col(60),col(110),col(70),col(200),col(280),col(75),col(75),col(90),col(90),col(90),col(220),
+    hdrRow(['Curso','Versión','Categoría','Severidad','Título','Descripción','Fecha','Estado','Creada por','Editada por','Resuelta por','Resolución']),
+  ];
+  let ri3=0;
+  courses.forEach(c=>{
+    (c.versions||[]).forEach(v=>{
+      (v.incidents||[]).forEach(inc=>{
+        const shade=ri3%2===1;
+        const resSid = inc.resolved
+          ? getStyle({bg:'#F0FDF4',fg:'#15803D',halign:'Center',wrap:true,bg2:shade?'#F7F9FC':undefined})
+          : getStyle({bg:'#FEF2F2',fg:'#DC2626',halign:'Center',wrap:true,bg2:shade?'#F7F9FC':undefined});
+        sh3.push(dataRow([
+          cell(c.name,   shade?BOLD2:BOLD),
+          cell(v.number, shade?ROW2C:CENTER),
+          cell(inc.category||'', shade?ROW2:NORMAL),
+          cell(inc.severity||'', sevSid(inc.severity,shade)),
+          cell(inc.title||'', shade?BOLD2:BOLD),
+          cell(inc.description||'', shade?ROW2:NORMAL),
+          cell(inc.date||'', shade?ROW2C:CENTER),
+          cell(inc.resolved?'Resuelta':'Abierta', resSid),
+          cell(inc.creadaPor||'—', shade?ROW2C:CENTER),
+          cell(inc.editadoPor||'—', shade?ROW2C:CENTER),
+          cell(inc.resueltaPor||'—', shade?ROW2C:CENTER),
+          cell(inc.resolution||'', shade?ROW2:NORMAL),
+        ], 28));
+        ri3++;
+      });
+    });
+  });
+
+  // ── Estilos XML ───────────────────────────────────────────────────────
+  function styleDef({id,opts}) {
+    const {bg,fg,bold,halign,wrap}=opts;
+    let font = `<Font ss:Name="Segoe UI" ss:Size="9"${fg?` ss:Color="${fg}"`:''}${bold?' ss:Bold="1"':''}/>`;
+    let interior = bg?`<Interior ss:Color="${bg}" ss:Pattern="Solid"/>`:'';
+    let align = (halign||wrap)?`<Alignment${halign?` ss:Horizontal="${halign}"`:''}${wrap?' ss:WrapText="1"':''}/>` :'';
+    let border = `<Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders>`;
+    return `<Style ss:ID="${id}">${font}${interior}${align}${border}</Style>`;
+  }
+
+  const styleXML = '<Styles>'+Object.values(styles).map(styleDef).join('')+'</Styles>';
+
+  function worksheet(name, rows) {
+    return `<Worksheet ss:Name="${name}"><Table>${rows.join('')}</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane></WorksheetOptions></Worksheet>`;
+  }
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:o="urn:schemas-microsoft-com:office:office">
+<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Title>CourseTrack Export</Title>
+</DocumentProperties>
+${styleXML}
+${worksheet('Cursos', sh1)}
+${worksheet('Versiones', sh2)}
+${worksheet('Incidencias', sh3)}
+</Workbook>`;
+
+  const blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const a = Object.assign(document.createElement('a'),{
+    href: URL.createObjectURL(blob),
+    download: `coursetrack_${today()}.xls`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Excel exportado ✓');
 }
 function importJSON() { document.getElementById('fileInput').click(); }
 function onFileImport(e) {
