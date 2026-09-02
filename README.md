@@ -23,12 +23,14 @@ Herramienta web de gestión del ciclo de vida de cursos eLearning para oficinas 
 accenture-coursetrack/
 ├── index.html                              # Aplicación completa (HTML + CSS + JS, fichero único autocontenido)
 ├── README.md                               # Este fichero
-├── CourseTrack_Guia_Usuario.docx           # Guía de usuario completa
-├── gen_guia_coursetrack.py                 # Script Python para regenerar la guía de usuario
-├── CourseTrack_Novedades.docx              # Novedades de la aplicación (actualizado con cada release)
-├── gen_novedades_coursetrack.py            # Script Python para regenerar el documento de novedades
-├── CourseTrack_EspecificacionesTecnicas.docx  # Especificaciones técnicas y buenas prácticas
-└── gen_coursetrack_tech.py                 # Script Python para regenerar las especificaciones técnicas
+├── .gitignore
+└── Documentacion/
+    ├── CourseTrack_Guia_Usuario.docx       # Guía de usuario completa
+    ├── gen_guia_coursetrack.py             # Script Python para regenerar la guía de usuario
+    ├── CourseTrack_Novedades.docx          # Novedades de la aplicación (actualizado con cada release)
+    ├── gen_novedades_coursetrack.py        # Script Python para regenerar el documento de novedades
+    ├── CourseTrack_EspecificacionesTecnicas.docx  # Especificaciones técnicas y buenas prácticas
+    └── gen_coursetrack_tech.py             # Script Python para regenerar las especificaciones técnicas
 ```
 
 La aplicación es un fichero HTML autocontenido sin dependencias externas: sin frameworks, sin librerías externas, sin servidor de aplicaciones.
