@@ -38,6 +38,47 @@
       --hdr-h:     60px;
     }
 
+    html[data-theme="dark"] {
+      --bg:           #0F172A;
+      --surface:      #1E293B;
+      --surface-2:    #253347;
+      --border:       #334155;
+      --border-dark:  #475569;
+      --text:         #F1F5F9;
+      --text-2:       #94A3B8;
+      --text-3:       #64748B;
+      --primary:      #60A5FA;
+      --primary-dark: #93C5FD;
+      --primary-light:#1E3A5F;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+      --shadow:    0 4px 12px rgba(0,0,0,.3);
+      --shadow-lg: 0 8px 28px rgba(0,0,0,.5);
+    }
+    html[data-theme="dark"] .conn-pill.local     { background: #1E293B; color: var(--text-3); }
+    html[data-theme="dark"] .conn-pill.connected { background: #14532D; color: #4ADE80; }
+    html[data-theme="dark"] .conn-pill.syncing   { background: #1E3A5F; color: var(--primary); }
+    html[data-theme="dark"] .conn-pill.error     { background: #450A0A; color: #FCA5A5; }
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea {
+      background: var(--surface-2);
+      color: var(--text);
+      border-color: var(--border);
+      color-scheme: dark;
+    }
+    html[data-theme="dark"] .modal-box { background: var(--surface); }
+    html[data-theme="dark"] .panel     { background: var(--surface); }
+
+    /* Toggle button */
+    .theme-toggle {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); width: 32px; height: 32px;
+      cursor: pointer; font-size: 15px; display: flex;
+      align-items: center; justify-content: center;
+      color: var(--text-2); transition: all .15s; flex-shrink: 0;
+    }
+    .theme-toggle:hover { background: var(--surface-2); border-color: var(--border-dark); }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       background: var(--bg);
@@ -666,6 +707,7 @@
     <div class="user-chip" id="userChip" title="Usuario activo">👤 <span class="btn-lbl">—</span></div>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()" title="Exportar JSON">⬇ <span class="btn-lbl">Exportar</span></button>
     <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema"></button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('settings')" title="Configuración">⚙</button>
     <button class="btn btn-primary" onclick="openModal('course')">+ <span class="btn-lbl">Nuevo curso</span></button>
   </div>
@@ -798,9 +840,10 @@ const INC_CATS = [
   'Estructura IMS','Evaluación','Vídeo / Audio','Accesibilidad','Otro'
 ];
 const SEVS     = ['Alta','Media','Baja'];
-const LS_KEY   = 'coursetrack_v1';
-const GAS_KEY  = 'coursetrack_gas_url';
-const USER_KEY = 'coursetrack_user';
+const LS_KEY    = 'coursetrack_v1';
+const GAS_KEY   = 'coursetrack_gas_url';
+const USER_KEY  = 'coursetrack_user';
+const THEME_KEY = 'coursetrack_theme';
 
 // ── Editar estas listas para añadir/quitar valores ────────────────
 const USERS = [
@@ -936,8 +979,25 @@ function save() {
   if (gasUrl) saveToGAS(courses);
 }
 
+// ── Tema oscuro ───────────────────────────────────────────────────────────
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) || 'light';
+  applyTheme(saved);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀' : '🌙';
+}
+
 // Inicialización: muestra datos locales enseguida, luego intenta GAS.
 async function init() {
+  initTheme();
   render(); // muestra local inmediatamente
   if (!gasUrl) { updateConnPill('local'); return; }
 
