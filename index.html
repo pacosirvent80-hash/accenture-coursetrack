@@ -1856,13 +1856,13 @@ function exportCSV() {
     const cBase = [c.name,c.code,c.provider,c.scormVersion,c.language,c.duration,c.notes||'',c.createdAt||'',c.updatedAt||''];
     const vers = c.versions||[];
     if (!vers.length) {
-      rows.push([...cBase,'','','','','','','','','','','','','','']);
+      rows.push([...cBase,'','','','','','','','','','','','','','','']);
     } else {
       vers.forEach(v => {
         const vBase = [v.number,v.status||'',v.date||'',v.modificadoPor||'',v.notes||''];
         const incs = v.incidents||[];
         if (!incs.length) {
-          rows.push([...cBase,...vBase,'','','','','','','','','','']);
+          rows.push([...cBase,...vBase,'','','','','','','','','','','']);
         } else {
           incs.forEach(i => {
             rows.push([...cBase,...vBase,
