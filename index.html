@@ -86,6 +86,11 @@
     }
     .export-menu button:hover { background: var(--surface-2); }
     .export-menu hr { border: none; border-top: 1px solid var(--border); margin: 0; }
+    @media (max-width: 768px) {
+      .export-menu { min-width: 130px; right: 0; left: auto; }
+      .export-menu button { padding: 13px 14px; font-size: 14px; }
+      .export-wrap .btn-lbl { display: none; }
+    }
 
     /* Toggle button */
     .theme-toggle {
@@ -1861,192 +1866,113 @@ function exportCSV() {
   toast('CSV exportado ✓');
 }
 
-// ── EXCEL (SpreadsheetML) ─────────────────────────────────────────────────
+// ── EXCEL (XLSX real: OOXML + ZIP sin dependencias externas) ─────────────
 function exportExcel() {
-  const ESTADO_COLORS = {
-    entregado:     {bg:'#EEF2FF',fg:'#4338CA'},
-    en_revision:   {bg:'#F5F3FF',fg:'#7C3AED'},
-    incidencia:    {bg:'#FEF2F2',fg:'#DC2626'},
-    en_correccion: {bg:'#FFF7ED',fg:'#C2410C'},
-    aprobado:      {bg:'#F0FDF4',fg:'#15803D'},
-    publicado:     {bg:'#F0FDFA',fg:'#0F766E'},
-    en_pausa:      {bg:'#F8FAFC',fg:'#64748B'},
-  };
-  const SEV_COLORS = {
-    Alta:  {bg:'#FEF2F2',fg:'#DC2626'},
-    Media: {bg:'#FFF7ED',fg:'#C2410C'},
-    Baja:  {bg:'#F0FDF4',fg:'#15803D'},
-  };
-
-  // ── Generador de estilos ─────────────────────────────────────────────
-  const styles = {};
-  let styleIdx = 1;
-  function getStyle(opts={}) {
-    const key = JSON.stringify(opts);
-    if (!styles[key]) styles[key] = { id: 's'+styleIdx++, opts };
-    return styles[key].id;
+  // ── CRC32 ──────────────────────────────────────────────────────────────
+  function crc32(buf) {
+    const t=new Uint32Array(256);
+    for(let i=0;i<256;i++){let c=i;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[i]=c;}
+    let r=0xFFFFFFFF;
+    for(let i=0;i<buf.length;i++)r=t[(r^buf[i])&0xFF]^(r>>>8);
+    return(r^0xFFFFFFFF)>>>0;
   }
-  const HDR    = getStyle({bg:'#1E3A5F', fg:'#FFFFFF', bold:true, wrap:true, halign:'Center'});
-  const NORMAL = getStyle({wrap:true});
-  const CENTER = getStyle({wrap:true, halign:'Center'});
-  const ROW2   = getStyle({bg:'#F7F9FC', wrap:true});
-  const ROW2C  = getStyle({bg:'#F7F9FC', wrap:true, halign:'Center'});
-  const BOLD   = getStyle({bold:true, wrap:true});
-  const BOLD2  = getStyle({bold:true, wrap:true, bg:'#F7F9FC'});
-
-  Object.entries(ESTADO_COLORS).forEach(([k,{bg,fg}])=>{
-    getStyle({bg,fg,halign:'Center',wrap:true,id:'est_'+k});
-    getStyle({bg,fg,halign:'Center',wrap:true,bg2:'#F7F9FC',id:'est2_'+k});
-  });
-  Object.entries(SEV_COLORS).forEach(([k,{bg,fg}])=>{
-    getStyle({bg,fg,halign:'Center',wrap:true,id:'sev_'+k});
-    getStyle({bg,fg,halign:'Center',wrap:true,bg2:'#F7F9FC',id:'sev2_'+k});
-  });
-  // resolved / open
-  getStyle({bg:'#F0FDF4',fg:'#15803D',halign:'Center',wrap:true,id:'res_ok'});
-  getStyle({bg:'#FEF2F2',fg:'#DC2626',halign:'Center',wrap:true,id:'res_no'});
-
-  function sid(opts) { return getStyle(opts); }
-  function estSid(estado, shade) {
-    const {bg,fg}=ESTADO_COLORS[estado]||{bg:'#F8FAFC',fg:'#64748B'};
-    return getStyle({bg,fg,halign:'Center',wrap:true,id:'est'+(shade?'2_':'_')+estado});
+  // ── ZIP builder (store, sin compresión) ────────────────────────────────
+  function makeZip(files) {
+    const enc=new TextEncoder();
+    const u8=s=>s instanceof Uint8Array?s:enc.encode(s);
+    const l2=(v,b,o)=>{b[o]=v&0xFF;b[o+1]=(v>>>8)&0xFF;};
+    const l4=(v,b,o)=>{b[o]=v&0xFF;b[o+1]=(v>>>8)&0xFF;b[o+2]=(v>>>16)&0xFF;b[o+3]=(v>>>24)&0xFF;};
+    const entries=[];let off=0;
+    for(const{name,data}of files){
+      const nb=enc.encode(name),fd=u8(data),crc=crc32(fd),sz=fd.length;
+      const lh=new Uint8Array(30+nb.length+sz);
+      l4(0x04034b50,lh,0);l2(20,lh,4);l2(0,lh,6);l2(0,lh,8);
+      l2(0,lh,10);l2(0,lh,12);l4(crc,lh,14);l4(sz,lh,18);l4(sz,lh,22);
+      l2(nb.length,lh,26);l2(0,lh,28);lh.set(nb,30);lh.set(fd,30+nb.length);
+      entries.push({lh,nb,crc,sz,off});off+=lh.length;
+    }
+    const cds=entries.map(({nb,crc,sz,off})=>{
+      const cd=new Uint8Array(46+nb.length);
+      l4(0x02014b50,cd,0);l2(20,cd,4);l2(20,cd,6);l2(0,cd,8);l2(0,cd,10);
+      l2(0,cd,12);l2(0,cd,14);l4(crc,cd,16);l4(sz,cd,20);l4(sz,cd,24);
+      l2(nb.length,cd,28);l2(0,cd,30);l2(0,cd,32);l2(0,cd,34);l2(0,cd,36);
+      l4(0,cd,38);l4(off,cd,42);cd.set(nb,46);return cd;
+    });
+    const cdOff=off,cdSz=cds.reduce((s,c)=>s+c.length,0);
+    const eo=new Uint8Array(22);
+    l4(0x06054b50,eo,0);l2(0,eo,4);l2(0,eo,6);
+    l2(entries.length,eo,8);l2(entries.length,eo,10);
+    l4(cdSz,eo,12);l4(cdOff,eo,16);l2(0,eo,20);
+    const res=new Uint8Array(off+cdSz+22);let pos=0;
+    entries.forEach(e=>{res.set(e.lh,pos);pos+=e.lh.length;});
+    cds.forEach(cd=>{res.set(cd,pos);pos+=cd.length;});
+    res.set(eo,pos);return res;
   }
-  function sevSid(sev, shade) {
-    const {bg,fg}=SEV_COLORS[sev]||{bg:'#F8FAFC',fg:'#64748B'};
-    return getStyle({bg,fg,halign:'Center',wrap:true,id:'sev'+(shade?'2_':'_')+sev});
+  // ── Helpers ────────────────────────────────────────────────────────────
+  const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const cl=n=>{let s='';while(n>0){n--;s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26);}return s;};
+  // Style IDs: 0 default | 1 hdr | 2 left | 3 center | 4 bold
+  //            5 shLeft  | 6 shCenter | 7 shBold
+  //            8-14 estados | 15-17 severidades | 18 resuelta | 19 abierta
+  //            20 incRed | 21 incRedSh | 22 incGreen | 23 incGreenSh
+  const ST={entregado:8,en_revision:9,incidencia:10,en_correccion:11,aprobado:12,publicado:13,en_pausa:14};
+  const SV={Alta:15,Media:16,Baja:17};
+  const sh=d=>({L:d?5:2,C:d?6:3,B:d?7:4});
+  const is=(n,d)=>n>0?(d?21:20):(d?23:22);
+  const C=(v,s)=>({v,s});
+  // ── OOXML estático ─────────────────────────────────────────────────────
+  const CT=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const RELS=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const WB=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Cursos" sheetId="1" r:id="rId1"/><sheet name="Versiones" sheetId="2" r:id="rId2"/><sheet name="Incidencias" sheetId="3" r:id="rId3"/></sheets></workbook>`;
+  const WBR=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const STY=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="10"><font><sz val="9"/><name val="Segoe UI"/><color rgb="FF1E293B"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FF1E293B"/></font><font><b/><sz val="10"/><name val="Segoe UI"/><color rgb="FFFFFFFF"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FF4338CA"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FF7C3AED"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FFDC2626"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FFC2410C"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FF15803D"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FF0F766E"/></font><font><b/><sz val="9"/><name val="Segoe UI"/><color rgb="FF64748B"/></font></fonts><fills count="12"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1E3A5F"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF7F9FC"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEEF2FF"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF5F3FF"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFEF2F2"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF7ED"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF0FDF4"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF0FDFA"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF8FAFC"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFE2E8F0"/></left><right style="thin"><color rgb="FFE2E8F0"/></right><top style="thin"><color rgb="FFE2E8F0"/></top><bottom style="thin"><color rgb="FFE2E8F0"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="24"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="3" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="4" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="5" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="6" fillId="8" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="9" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="8" fillId="10" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="9" fillId="11" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="5" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="6" fillId="8" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="9" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="9" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="5" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="5" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="5" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="7" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  // ── Generador de worksheet ─────────────────────────────────────────────
+  function mkSheet(widths,rows) {
+    const cols=widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');
+    const data=rows.map((row,ri)=>{
+      const ht=row.h?` ht="${row.h}" customHeight="1"`:'';
+      const cells=row.cells.map((cell,ci)=>{
+        const ref=cl(ci+1)+(ri+1),s=cell.s??0;
+        return `<c r="${ref}" s="${s}" t="inlineStr"><is><t>${esc(cell.v??'')}</t></is></c>`;
+      }).join('');
+      return `<row r="${ri+1}"${ht}>${cells}</row>`;
+    }).join('');
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${cols}</cols><sheetData>${data}</sheetData></worksheet>`;
   }
-
-  // ── XML helpers ───────────────────────────────────────────────────────
-  const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  function cell(val, sid, type='String') {
-    return `<Cell ss:StyleID="${sid}"><Data ss:Type="${type}">${esc(val)}</Data></Cell>`;
-  }
-  function hdrRow(cols) {
-    return '<Row ss:Height="22">' + cols.map(c=>cell(c,HDR)).join('') + '</Row>';
-  }
-  function dataRow(cells, h=18) {
-    return `<Row ss:Height="${h}">${cells.join('')}</Row>`;
-  }
-  function col(w) { return `<Column ss:Width="${w}"/>`; }
-
+  const H=t=>C(t,1);
   // ── Hoja 1: Cursos ────────────────────────────────────────────────────
-  let sh1 = [
-    col(220),col(80),col(130),col(110),col(80),col(65),col(100),col(75),col(100),col(240),
-    hdrRow(['Nombre del curso','Código','Proveedor','SCORM / Formato','Idioma','Duración','Estado actual','Versión','Últ. modificación','Notas']),
+  const w1=[40,12,20,18,12,9,15,10,13,45];
+  const r1=[
+    {h:22,cells:['Nombre del curso','Código','Proveedor','SCORM / Formato','Idioma','Duración','Estado actual','Versión','Últ. modificación','Notas'].map(H)},
+    ...courses.map((cr,i)=>{
+      const d=i%2===1,s=sh(d),v=(cr.versions||[]).slice(-1)[0]||{},est=v.status||'';
+      return {h:18,cells:[C(cr.name,s.B),C(cr.code,s.C),C(cr.provider,s.L),C(cr.scormVersion,s.L),C(cr.language,s.C),C(cr.duration,s.C),C(est.replace(/_/g,' '),ST[est]??14),C(v.number||'—',s.C),C(cr.updatedAt||'',s.C),C(cr.notes||'',s.L)]};
+    })
   ];
-  courses.forEach((c,i)=>{
-    const shade=i%2===1;
-    const v=(c.versions||[]).slice(-1)[0]||{};
-    const n=shade;
-    sh1.push(dataRow([
-      cell(c.name,    shade?BOLD2:BOLD),
-      cell(c.code,    shade?ROW2C:CENTER),
-      cell(c.provider,shade?ROW2:NORMAL),
-      cell(c.scormVersion,shade?ROW2:NORMAL),
-      cell(c.language,shade?ROW2C:CENTER),
-      cell(c.duration,shade?ROW2C:CENTER),
-      cell((v.status||'—').replace(/_/g,' '), estSid(v.status,shade)),
-      cell(v.number||'—', shade?ROW2C:CENTER),
-      cell(c.updatedAt||'', shade?ROW2C:CENTER),
-      cell(c.notes||'', shade?ROW2:NORMAL),
-    ]));
-  });
-
   // ── Hoja 2: Versiones ─────────────────────────────────────────────────
-  let sh2 = [
-    col(220),col(80),col(60),col(100),col(75),col(100),col(75),col(240),
-    hdrRow(['Curso','Código','Versión','Estado','Fecha','Modificado por','Incidencias','Notas de versión']),
-  ];
+  const w2=[38,12,9,15,11,15,12,45];
+  const r2=[{h:22,cells:['Curso','Código','Versión','Estado','Fecha','Modificado por','Incidencias','Notas de versión'].map(H)}];
   let ri2=0;
-  courses.forEach(c=>{
-    (c.versions||[]).forEach(v=>{
-      const shade=ri2%2===1;
-      const ninc=(v.incidents||[]).length;
-      const incStyle = ninc>0 ? getStyle({fg:'#DC2626',halign:'Center',bold:true,wrap:true,bg:shade?'#F7F9FC':undefined})
-                               : getStyle({fg:'#15803D',halign:'Center',wrap:true,bg:shade?'#F7F9FC':undefined});
-      sh2.push(dataRow([
-        cell(c.name,   shade?BOLD2:BOLD),
-        cell(c.code,   shade?ROW2C:CENTER),
-        cell(v.number, shade?ROW2C:CENTER),
-        cell((v.status||'').replace(/_/g,' '), estSid(v.status,shade)),
-        cell(v.date||'', shade?ROW2C:CENTER),
-        cell(v.modificadoPor||'—', shade?ROW2C:CENTER),
-        cell(ninc||'—', incStyle),
-        cell(v.notes||'', shade?ROW2:NORMAL),
-      ]));
-      ri2++;
-    });
-  });
-
+  courses.forEach(cr=>{(cr.versions||[]).forEach(v=>{const d=ri2%2===1,s=sh(d),n=(v.incidents||[]).length;r2.push({h:18,cells:[C(cr.name,s.B),C(cr.code,s.C),C(v.number,s.C),C((v.status||'').replace(/_/g,' '),ST[v.status]??14),C(v.date||'',s.C),C(v.modificadoPor||'—',s.C),C(n||'—',is(n,d)),C(v.notes||'',s.L)]});ri2++;});});
   // ── Hoja 3: Incidencias ───────────────────────────────────────────────
-  let sh3 = [
-    col(180),col(60),col(110),col(70),col(200),col(280),col(75),col(75),col(90),col(90),col(90),col(220),
-    hdrRow(['Curso','Versión','Categoría','Severidad','Título','Descripción','Fecha','Estado','Creada por','Editada por','Resuelta por','Resolución']),
-  ];
+  const w3=[28,9,16,11,35,50,11,12,13,13,13,40];
+  const r3=[{h:22,cells:['Curso','Versión','Categoría','Severidad','Título','Descripción','Fecha','Estado','Creada por','Editada por','Resuelta por','Resolución'].map(H)}];
   let ri3=0;
-  courses.forEach(c=>{
-    (c.versions||[]).forEach(v=>{
-      (v.incidents||[]).forEach(inc=>{
-        const shade=ri3%2===1;
-        const resSid = inc.resolved
-          ? getStyle({bg:'#F0FDF4',fg:'#15803D',halign:'Center',wrap:true,bg2:shade?'#F7F9FC':undefined})
-          : getStyle({bg:'#FEF2F2',fg:'#DC2626',halign:'Center',wrap:true,bg2:shade?'#F7F9FC':undefined});
-        sh3.push(dataRow([
-          cell(c.name,   shade?BOLD2:BOLD),
-          cell(v.number, shade?ROW2C:CENTER),
-          cell(inc.category||'', shade?ROW2:NORMAL),
-          cell(inc.severity||'', sevSid(inc.severity,shade)),
-          cell(inc.title||'', shade?BOLD2:BOLD),
-          cell(inc.description||'', shade?ROW2:NORMAL),
-          cell(inc.date||'', shade?ROW2C:CENTER),
-          cell(inc.resolved?'Resuelta':'Abierta', resSid),
-          cell(inc.creadaPor||'—', shade?ROW2C:CENTER),
-          cell(inc.editadoPor||'—', shade?ROW2C:CENTER),
-          cell(inc.resueltaPor||'—', shade?ROW2C:CENTER),
-          cell(inc.resolution||'', shade?ROW2:NORMAL),
-        ], 28));
-        ri3++;
-      });
-    });
-  });
-
-  // ── Estilos XML ───────────────────────────────────────────────────────
-  function styleDef({id,opts}) {
-    const {bg,fg,bold,halign,wrap}=opts;
-    let font = `<Font ss:Name="Segoe UI" ss:Size="9"${fg?` ss:Color="${fg}"`:''}${bold?' ss:Bold="1"':''}/>`;
-    let interior = bg?`<Interior ss:Color="${bg}" ss:Pattern="Solid"/>`:'';
-    let align = (halign||wrap)?`<Alignment${halign?` ss:Horizontal="${halign}"`:''}${wrap?' ss:WrapText="1"':''}/>` :'';
-    let border = `<Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0"/></Borders>`;
-    return `<Style ss:ID="${id}">${font}${interior}${align}${border}</Style>`;
-  }
-
-  const styleXML = '<Styles>'+Object.values(styles).map(styleDef).join('')+'</Styles>';
-
-  function worksheet(name, rows) {
-    return `<Worksheet ss:Name="${name}"><Table>${rows.join('')}</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane></WorksheetOptions></Worksheet>`;
-  }
-
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:o="urn:schemas-microsoft-com:office:office">
-<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
-  <Title>CourseTrack Export</Title>
-</DocumentProperties>
-${styleXML}
-${worksheet('Cursos', sh1)}
-${worksheet('Versiones', sh2)}
-${worksheet('Incidencias', sh3)}
-</Workbook>`;
-
-  const blob = new Blob([xml], {type:'application/vnd.ms-excel;charset=utf-8'});
-  const a = Object.assign(document.createElement('a'),{
-    href: URL.createObjectURL(blob),
-    download: `coursetrack_${today()}.xls`
-  });
-  a.click(); URL.revokeObjectURL(a.href);
+  courses.forEach(cr=>{(cr.versions||[]).forEach(v=>{(v.incidents||[]).forEach(inc=>{const d=ri3%2===1,s=sh(d);r3.push({h:28,cells:[C(cr.name,s.B),C(v.number,s.C),C(inc.category||'',s.L),C(inc.severity||'',SV[inc.severity]??2),C(inc.title||'',s.B),C(inc.description||'',s.L),C(inc.date||'',s.C),C(inc.resolved?'Resuelta':'Abierta',inc.resolved?18:19),C(inc.creadaPor||'—',s.C),C(inc.editadoPor||'—',s.C),C(inc.resueltaPor||'—',s.C),C(inc.resolution||'',s.L)]});ri3++;});});});
+  // ── Generar ZIP y descargar ───────────────────────────────────────────
+  const zip=makeZip([
+    {name:'[Content_Types].xml',        data:CT},
+    {name:'_rels/.rels',                data:RELS},
+    {name:'xl/workbook.xml',            data:WB},
+    {name:'xl/_rels/workbook.xml.rels', data:WBR},
+    {name:'xl/styles.xml',              data:STY},
+    {name:'xl/worksheets/sheet1.xml',   data:mkSheet(w1,r1)},
+    {name:'xl/worksheets/sheet2.xml',   data:mkSheet(w2,r2)},
+    {name:'xl/worksheets/sheet3.xml',   data:mkSheet(w3,r3)},
+  ]);
+  const blob=new Blob([zip],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:`coursetrack_${today()}.xlsx`});
+  a.click();URL.revokeObjectURL(a.href);
   toast('Excel exportado ✓');
 }
 function importJSON() { document.getElementById('fileInput').click(); }
