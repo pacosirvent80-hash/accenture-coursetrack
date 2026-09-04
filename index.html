@@ -124,11 +124,12 @@
     }
     .hdr-logo {
       display: flex; align-items: center; gap: 10px;
-      white-space: nowrap;
+      flex-shrink: 1; min-width: 28px; overflow: hidden;
     }
     .hdr-brand {
       font-size: 18px; font-weight: 300;
       letter-spacing: -0.03em; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .pro-max {
       font-size: 9px; font-weight: 900; font-style: italic;
@@ -150,7 +151,7 @@
     }
     .hdr-div { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
     .hdr-sub { color: var(--text-2); font-size: 13px; white-space: nowrap; }
-    .hdr-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .hdr-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
     /* Connection pill */
     .conn-pill {
