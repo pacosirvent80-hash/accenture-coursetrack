@@ -127,6 +127,18 @@
       font-weight: 700; font-size: 16px; color: var(--text);
       white-space: nowrap;
     }
+    .pro-max {
+      font-size: 9px; font-weight: 900; font-style: italic;
+      text-transform: uppercase; letter-spacing: .06em;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      padding: 2px 5px 1px;
+      border-radius: 3px;
+      line-height: 1;
+      align-self: center;
+      margin-left: -4px;
+      user-select: none;
+    }
     .hdr-logo .icon {
       width: 32px; height: 32px;
       background: var(--primary); border-radius: var(--radius-sm);
@@ -722,6 +734,7 @@
   <div class="hdr-logo">
     <div class="icon">📋</div>
     CourseTrack
+    <span class="pro-max">Pro Max</span>
   </div>
   <div class="hdr-actions">
     <!-- Connection status pill -->
@@ -739,6 +752,7 @@
     </div>
     <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema"></button>
+    <button class="btn btn-ghost btn-icon" onclick="openModal('bugreport')" title="Reportar incidencia de la app">🐛</button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('settings')" title="Configuración">⚙</button>
     <button class="btn btn-primary" onclick="openModal('course')">+ <span class="btn-lbl">Nuevo curso</span></button>
   </div>
@@ -1809,6 +1823,56 @@ function doPost(e) {
       });
       c.updatedAt=today(); save(); curTab='incidents'; return true;
     };
+  }
+
+  // ── Reportar incidencia de la app ────────────────────
+  if (mode==='bugreport') {
+    document.getElementById('mIcon').textContent  = '🐛';
+    document.getElementById('mTitle').textContent = 'Reportar incidencia de la aplicación';
+    document.getElementById('mConfirm').textContent = '📧 Abrir correo';
+    document.getElementById('mBody').innerHTML = `
+      <div class="fg">
+        <label>Tipo</label>
+        <select id="f_brtype">
+          <option value="Error">🔴 Error — algo no funciona correctamente</option>
+          <option value="Sugerencia">💡 Sugerencia de mejora</option>
+          <option value="Pregunta">❓ Pregunta o duda</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Título del problema <span style="color:var(--c-incidencia)">*</span></label>
+        <input id="f_brtitle" type="text" placeholder="Descripción breve del problema…">
+      </div>
+      <div class="fg">
+        <label>Descripción detallada <span style="color:var(--c-incidencia)">*</span></label>
+        <textarea id="f_brdesc" style="min-height:100px" placeholder="¿Qué ocurre? ¿Qué esperabas que ocurriera?"></textarea>
+      </div>
+      <div class="fg">
+        <label>Pasos para reproducirlo</label>
+        <textarea id="f_brsteps" style="min-height:72px" placeholder="1. …&#10;2. …&#10;3. …"></textarea>
+      </div>
+      <p style="font-size:11px;color:var(--text-3);margin-top:4px">
+        Al pulsar «Abrir correo» se abrirá tu cliente de correo con el reporte pre-rellenado.<br>
+        Destinatario: <strong>f.sirvent.vila@accenture.com</strong>
+      </p>`;
+    confirmFn = () => {
+      const tipo  = document.getElementById('f_brtype').value;
+      const title = document.getElementById('f_brtitle').value.trim();
+      const desc  = document.getElementById('f_brdesc').value.trim();
+      const steps = document.getElementById('f_brsteps').value.trim();
+      if (!title || !desc) { toast('Título y descripción son obligatorios'); return false; }
+      const subject = encodeURIComponent(`[CourseTrack Pro Max] ${tipo}: ${title}`);
+      const body = encodeURIComponent(
+        `Tipo: ${tipo}\n` +
+        `Título: ${title}\n\n` +
+        `Descripción:\n${desc}\n\n` +
+        (steps ? `Pasos para reproducirlo:\n${steps}\n\n` : '') +
+        `---\nUsuario: ${activeUser||'—'}\nFecha: ${today()}\nNavegador: ${navigator.userAgent}`
+      );
+      window.location.href = `mailto:f.sirvent.vila@accenture.com?subject=${subject}&body=${body}`;
+      return true;
+    };
+    return;
   }
 }
 
