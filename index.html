@@ -601,7 +601,7 @@
       .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
 
-    /* ── Móvil ≤ 768px (complementa el bloque ya existente) ── */
+    /* ── Tablet + móvil ≤ 768px ── */
     @media (max-width: 768px) {
       /* Cabecera: botones compactos, ocultar etiquetas de texto */
       .hdr { padding: 0 12px; gap: 6px; }
@@ -618,12 +618,20 @@
       .table-wrap { background: transparent; border: none; box-shadow: none; overflow: visible; padding: 0; }
       table { display: block; width: 100%; }
       tbody { display: flex !important; flex-direction: column; gap: 8px; }
+      /* Toolbar: permite que los selects envuelvan en tablet */
+      .toolbar { flex-wrap: wrap; gap: 6px; }
+      .sel { flex: 1 1 calc(50% - 6px); min-width: 140px; }
     }
 
     /* ── Teléfonos pequeños ≤ 600px ───────────────────────── */
     @media (max-width: 600px) {
       :root { --hdr-h: 52px; }
       body { font-size: 13px; }
+      /* Cabecera: ocultar elementos no esenciales para liberar espacio */
+      .conn-pill { display: none; }
+      .export-wrap { display: none; }
+      .btn-hdr-import { display: none; }
+      .theme-toggle { display: none; }
 
       /* Espaciado principal */
       .main { padding: 12px 10px; }
@@ -674,6 +682,12 @@
 
       /* Toast con safe-area iOS */
       #toast { bottom: max(16px, env(safe-area-inset-bottom, 16px)); white-space: normal; text-align: center; max-width: 90vw; }
+    }
+
+    /* ── Teléfonos muy pequeños ≤ 420px ───────────────────── */
+    @media (max-width: 420px) {
+      .hdr-brand { display: none; }
+      .pro-max   { display: none; }
     }
 
     /* ── Teléfonos pequeños ≤ 400px ───────────────────────── */
@@ -753,7 +767,7 @@
         <button onclick="exportExcel(); closeExportMenu()">🟢 Excel (.xlsx)</button>
       </div>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
+    <button class="btn btn-ghost btn-sm btn-hdr-import" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema"></button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('bugreport')" title="Reportar incidencia de la app">🐛</button>
     <button class="btn btn-ghost btn-icon" onclick="openModal('settings')" title="Configuración">⚙</button>
