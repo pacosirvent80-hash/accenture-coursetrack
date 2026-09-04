@@ -2251,7 +2251,17 @@ function doPost(e) {
         <button class="btn btn-danger btn-sm" onclick="disconnectGAS()" style="width:100%;justify-content:center">
           Desconectar Google Sheets
         </button>
-      </div>`:''}`;
+      </div>`:''}
+      <hr style="margin:18px 0;border:none;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Zona de peligro</div>
+      <button class="btn btn-danger btn-sm" onclick="clearLocalData()" style="width:100%;justify-content:center">
+        🗑 Limpiar datos locales (este navegador)
+      </button>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.5">
+        Borra todos los cursos guardados en este navegador y reinicia con los datos de ejemplo.
+        <strong>No afecta a Google Sheets ni a otros usuarios.</strong>
+        Exporta una copia de seguridad JSON antes de continuar.
+      </div>`;
     confirmFn = () => {
       const url = document.getElementById('f_gasUrl').value.trim();
       gasUrl = url;
@@ -2549,6 +2559,19 @@ function disconnectGAS() {
   updateConnPill('local');
   closeModal();
   toast('Desconectado de Google Sheets. Modo local activado.');
+}
+
+function clearLocalData() {
+  closeModal();
+  if (!confirm('⚠ ¿Borrar todos los datos locales de este navegador?\n\nSe eliminarán todos los cursos, versiones e incidencias guardados aquí.\n• No afecta a Google Sheets ni a otros usuarios.\n• Asegúrate de haber exportado una copia JSON antes de continuar.')) return;
+  localStorage.removeItem(LS_KEY);
+  courses = seed();
+  save();
+  selId = null;
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('main').classList.remove('panel-open');
+  render();
+  toast('Datos locales eliminados. Portfolio reiniciado con datos de ejemplo.', 4000);
 }
 
 // ══════════════════════════════════════════════════════════════════
