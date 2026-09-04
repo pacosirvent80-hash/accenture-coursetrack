@@ -1344,7 +1344,6 @@ function renderStats() {
       <div class="stat-lbl">${i.label}</div>
     </div>`).join('');
   // actualizar badge del toggle de incidencias
-  const totalOpenInc = courses.flatMap(c=>openInc(c)).length;
   const vtCnt = document.getElementById('vt-inc-cnt');
   if (vtCnt) { vtCnt.textContent = totalOpenInc; vtCnt.style.display = totalOpenInc > 0 ? '' : 'none'; }
 }
