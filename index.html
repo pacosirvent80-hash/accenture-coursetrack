@@ -1487,7 +1487,7 @@ function openEditIncModal(iid) {
     inc.editadoPor   = activeUser;
     inc.fechaEdicion = today();
     c.updatedAt = today();
-    save(); switchTab('incidents'); return true;
+    save(); switchTab('incidents'); renderPanel(); renderTable(); return true;
   };
 }
 
