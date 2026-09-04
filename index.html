@@ -2131,12 +2131,18 @@ function onFileImport(e) {
     try {
       const data=JSON.parse(ev.target.result);
       if (!Array.isArray(data)) throw new Error('Formato no válido');
-      if (!confirm(`¿Importar ${data.length} curso(s)? Se reemplazarán los datos actuales.`)) return;
-      courses=data; save(); render();
+      const existingIds = new Set(courses.map(c=>c.id));
+      const nuevos = data.filter(c=>!existingIds.has(c.id));
+      const duplicados = data.length - nuevos.length;
+      const msg = duplicados
+        ? `¿Añadir ${nuevos.length} curso(s) nuevo(s)? (${duplicados} omitido(s) por ID duplicado)`
+        : `¿Añadir ${nuevos.length} curso(s) a los datos existentes?`;
+      if (!confirm(msg)) return;
+      courses = [...courses, ...nuevos]; save(); render();
       selId = null;
       document.getElementById('panel').classList.remove('open');
       document.getElementById('main').classList.remove('panel-open');
-      toast(`${data.length} cursos importados ✓`);
+      toast(`${nuevos.length} cursos añadidos ✓`);
     } catch(err) { toast('Error al importar: '+err.message); }
   };
   reader.readAsText(file);
