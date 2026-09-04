@@ -709,7 +709,7 @@
       cursor: pointer; font-family: inherit; white-space: nowrap;
       transition: all .15s;
     }
-    .user-chip { cursor: default; pointer-events: none; }
+    .user-chip:hover { filter: brightness(.95); }
     @media (max-width: 768px) { .user-chip .btn-lbl { display: none; } }
 
     * { -webkit-tap-highlight-color: transparent; }
@@ -728,7 +728,7 @@
     <button class="conn-pill local" id="connPill" onclick="openModal('settings')" title="Configurar Google Sheets">
       ⚫ Local
     </button>
-    <div class="user-chip" id="userChip" title="Usuario activo">👤 <span class="btn-lbl">—</span></div>
+    <div class="user-chip" id="userChip" title="Usuario activo" onclick="changeUser()">👤 <span class="btn-lbl">—</span></div>
     <div class="export-wrap">
       <button class="btn btn-ghost btn-sm" onclick="toggleExportMenu(event)" title="Exportar">⬇ <span class="btn-lbl">Exportar</span></button>
       <div class="export-menu hidden" id="exportMenu">
@@ -918,6 +918,7 @@ let activeUser = localStorage.getItem(USER_KEY) || '';
 
 function uid()  { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
 function today(){ return new Date().toISOString().slice(0,10); }
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function daysSince(d){ return Math.floor((Date.now()-new Date(d))/86400000); }
 function fmt(d) {
   if (!d) return '—';
@@ -992,10 +993,22 @@ async function saveToGAS(data) {
     await fetch(gasUrl, {
       method: 'POST',
       mode:   'no-cors',   // evita preflight CORS desde file://
+      headers: {'Content-Type':'text/plain'},
       body:   JSON.stringify(data)
     });
+    // Verificar con GET (que sí puede leer respuesta)
+    const verRes = await fetch(gasUrl + '?verify=1', { mode:'cors' }).catch(()=>null);
+    if (verRes && verRes.ok) {
+      const verData = await verRes.json().catch(()=>null);
+      if (verData && verData.ok) {
+        updateConnPill('ok');
+        toast('☁ Guardado en Google Sheets ✓');
+        return;
+      }
+    }
+    // Si no podemos verificar, mostrar estado neutro (la escritura no-cors no lanza error si llegó al servidor)
     updateConnPill('ok');
-    toast('☁ Guardado en Google Sheets');
+    toast('☁ Datos enviados a Google Sheets');
   } catch(e) {
     updateConnPill('error');
     toast('⚠ Error al guardar en Google Sheets. Datos en localStorage.');
@@ -1174,9 +1187,10 @@ function render() { renderStats(); renderFilters(); renderTable(); }
 
 function renderStats() {
   const bar = document.getElementById('statsBar');
-  const cnt = { _total: courses.length };
+  const filtered = getFiltered();
+  const cnt = { _total: filtered.length };
   Object.keys(STATUS).forEach(k=>cnt[k]=0);
-  courses.forEach(c=>{ const s=curVer(c)?.status; if(s) cnt[s]=(cnt[s]||0)+1; });
+  filtered.forEach(c=>{ const s=curVer(c)?.status; if(s) cnt[s]=(cnt[s]||0)+1; });
   const items = [
     { key:'',             label:'Total',        val:cnt._total,        color:'var(--primary)' },
     { key:'en_revision',  label:'En revisión',  val:cnt.en_revision,   color:'#8B5CF6'        },
@@ -1247,7 +1261,14 @@ function pickUser(idx) {
   toast(`Bienvenid@ ${name.split(' ')[0]} 👋`);
 }
 
-function changeUser() { /* bloqueado — el usuario no puede cambiarse una vez elegido */ }
+function changeUser() {
+  const u = prompt('Cambiar usuario:\n' + USERS.join(', '), activeUser);
+  if (!u || !USERS.includes(u.trim())) return;
+  activeUser = u.trim();
+  localStorage.setItem(USER_KEY, activeUser);
+  updateUserChip();
+  toast(`Usuario: ${activeUser}`);
+}
 
 function getFiltered() {
   const q    = document.getElementById('q').value.toLowerCase();
@@ -1258,10 +1279,16 @@ function getFiltered() {
     const s = curVer(c)?.status;
     if (stat && s!==stat) return false;
     if (prov && c.provider!==prov) return false;
-    if (user && curVer(c)?.modificadoPor!==user) return false;
+    if (user && !c.versions.some(v=>v.modificadoPor===user)) return false;
     if (q && !`${c.name} ${c.code} ${c.provider}`.toLowerCase().includes(q)) return false;
     return true;
   }).sort((a,b)=>{
+    if (sortField==='number') {
+      const pa=String(curVer(a)?.number??'0').split('.').map(Number);
+      const pb=String(curVer(b)?.number??'0').split('.').map(Number);
+      for(let i=0;i<Math.max(pa.length,pb.length);i++){const d=(pa[i]||0)-(pb[i]||0);if(d!==0)return d*sortDir;}
+      return 0;
+    }
     const av = a[sortField]??curVer(a)?.[sortField]??'';
     const bv = b[sortField]??curVer(b)?.[sortField]??'';
     return av<bv?-sortDir:av>bv?sortDir:0;
@@ -1290,7 +1317,7 @@ function renderTable() {
       const days = cv?daysSince(cv.date):0;
       const dc   = days>14?'alert':days>7?'warn':'';
       return `<tr class="m-card ${c.id===selId?'sel-row':''}" onclick="selectCourse('${c.id}')">
-        <td class="m-card-cell" colspan="7">
+        <td class="m-card-cell" colspan="8">
           <div class="m-card-top">
             <div class="m-card-info">
               <div class="c-name">${c.name}</div>
@@ -1421,8 +1448,9 @@ function renderTab() {
 }
 function resolveInc(iid) {
   const c=getCourse(selId);
-  const res=prompt('Resolución (opcional):')??' ';
-  c.versions.forEach(v=>{ const i=(v.incidents||[]).find(x=>x.id===iid); if(i){i.resolved=true;i.resolution=res;i.resueltaPor=activeUser;} });
+  const res = prompt('Resolución (opcional):');
+  if (res === null) return;  // usuario canceló
+  c.versions.forEach(v=>{ const i=(v.incidents||[]).find(x=>x.id===iid); if(i){i.resolved=true;i.resolution=res;i.resueltaPor=activeUser;i.fechaResolucion=today();} });
   c.updatedAt=today();
   save(); renderPanel(); renderTable();
   toast('Incidencia marcada como resuelta ✓');
@@ -1498,6 +1526,7 @@ function toggleResolutionField() {
 
 function deleteCourse() {
   const c=getCourse(selId);
+  if (!c) return;
   if(!confirm(`¿Eliminar "${c.name}"?\nEsta acción no se puede deshacer.`)) return;
   courses=courses.filter(x=>x.id!==selId);
   save(); closePanel();
@@ -1637,7 +1666,11 @@ function doPost(e) {
         createdAt:now, updatedAt:now,
         versions:[{id:uid(),number:'1.0',status:document.getElementById('f_stat').value,date:now,notes:'Alta inicial.',incidents:[],modificadoPor:activeUser}]
       });
-      save(); return true;
+      save();
+      selId = null;
+      document.getElementById('panel').classList.remove('open');
+      document.getElementById('main').classList.remove('panel-open');
+      return true;
     };
   }
 
@@ -1653,7 +1686,7 @@ function doPost(e) {
         <div class="fg"><label>Código *</label>
           <input id="f_code" type="text" value="${c.code.replace(/"/g,'&quot;')}"></div>
         <div class="fg"><label>Proveedor *</label>
-          <select id="f_prov">${PROVIDERS.map(p=>`<option${p===c.provider?' selected':''}>${p}</option>`).join('')}</select></div>
+          <select id="f_prov">${[...new Set([...PROVIDERS, c.provider||''])].filter(Boolean).map(p=>`<option value="${p}"${p===c.provider?' selected':''}>${p}</option>`).join('')}</select></div>
       </div>
       <div class="f2">
         <div class="fg"><label>Estándar SCORM</label>
@@ -1667,7 +1700,7 @@ function doPost(e) {
       <div class="fg"><label>Idioma</label>
         <select id="f_lang">${LANGUAGES.map(l=>`<option${l===c.language?' selected':''}>${l}</option>`).join('')}</select></div>
       <div class="fg"><label>Notas internas</label>
-        <textarea id="f_notes">${c.notes||''}</textarea></div>`;
+        <textarea id="f_notes">${escHtml(c.notes)}</textarea></div>`;
     confirmFn = () => {
       const name = document.getElementById('f_name').value.trim();
       const code = document.getElementById('f_code').value.trim();
@@ -1737,7 +1770,7 @@ function doPost(e) {
         notes:document.getElementById('f_vnotes').value,
         incidents:[], modificadoPor:activeUser
       });
-      c.updatedAt=today(); save(); return true;
+      c.updatedAt=today(); save(); curTab='versions'; return true;
     };
   }
 
@@ -1774,7 +1807,7 @@ function doPost(e) {
         date:document.getElementById('f_idate').value||today(),
         resolved:false, resolution:'', creadaPor:activeUser
       });
-      c.updatedAt=today(); save(); switchTab('incidents'); return true;
+      c.updatedAt=today(); save(); curTab='incidents'; return true;
     };
   }
 }
@@ -1801,6 +1834,11 @@ async function syncNow() {
   const remote = await loadFromGAS();
   if (remote) {
     courses=remote; saveLocal(courses); render();
+    if (selId && !courses.find(c=>c.id===selId)) {
+      selId = null;
+      document.getElementById('panel').classList.remove('open');
+      document.getElementById('main').classList.remove('panel-open');
+    }
     updateConnPill('ok');
     toast(`☁ ${remote.length} cursos cargados desde Google Sheets`);
   } else {
@@ -2003,6 +2041,9 @@ function onFileImport(e) {
       if (!Array.isArray(data)) throw new Error('Formato no válido');
       if (!confirm(`¿Importar ${data.length} curso(s)? Se reemplazarán los datos actuales.`)) return;
       courses=data; save(); render();
+      selId = null;
+      document.getElementById('panel').classList.remove('open');
+      document.getElementById('main').classList.remove('panel-open');
       toast(`${data.length} cursos importados ✓`);
     } catch(err) { toast('Error al importar: '+err.message); }
   };
