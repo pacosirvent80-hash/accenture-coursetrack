@@ -783,6 +783,106 @@
     }
     .comment-send:hover { background: var(--primary-dark); }
 
+    /* ══════════════════════════════════════════════════════
+       Modal de celebración — ¡Publicado!
+    ══════════════════════════════════════════════════════ */
+    .celebrate-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      animation: celFadeIn .25s ease;
+    }
+    @keyframes celFadeIn { from{opacity:0} to{opacity:1} }
+    .celebrate-box {
+      background: var(--surface); border-radius: 24px;
+      padding: 44px 52px 32px; text-align: center; position: relative;
+      box-shadow: 0 32px 80px rgba(0,0,0,.35), 0 0 0 1px rgba(13,148,136,.3);
+      max-width: 440px; width: calc(100% - 40px); overflow: hidden;
+      animation: celPop .5s cubic-bezier(.18,.89,.32,1.28);
+    }
+    @keyframes celPop {
+      0%  { transform: scale(.55) translateY(48px); opacity: 0; }
+      100%{ transform: scale(1)   translateY(0);    opacity: 1; }
+    }
+    /* fondo degradado sutil */
+    .celebrate-box::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(13,148,136,.12) 0%, transparent 70%);
+    }
+    .celebrate-box > * { position: relative; z-index: 1; }
+    /* confetti container */
+    .cel-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+    .cel-particle {
+      position: absolute; top: -12px; border-radius: 2px; opacity: 0;
+      animation: celFall linear forwards;
+    }
+    @keyframes celFall {
+      0%  { transform: translateY(0) rotate(0deg) scale(1);    opacity: 1; }
+      85% { opacity: 1; }
+      100%{ transform: translateY(520px) rotate(800deg) scale(.5); opacity: 0; }
+    }
+    /* contenido */
+    .cel-icon {
+      font-size: 68px; line-height: 1; display: block; margin-bottom: 14px;
+      animation: celBounce 1.1s ease infinite;
+      filter: drop-shadow(0 4px 12px rgba(13,148,136,.4));
+    }
+    @keyframes celBounce {
+      0%,100%{ transform: translateY(0) scale(1); }
+      35%    { transform: translateY(-20px) scale(1.08); }
+      65%    { transform: translateY(-8px)  scale(1.03); }
+    }
+    .cel-headline {
+      font-size: 28px; font-weight: 900; letter-spacing: -.02em;
+      color: var(--text); margin-bottom: 4px; line-height: 1.1;
+    }
+    .cel-sub {
+      font-size: 16px; font-weight: 700; margin-bottom: 16px;
+      background: linear-gradient(90deg, #0D9488, #3B82F6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .cel-curso-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 999px; padding: 7px 16px; font-size: 13px;
+      color: var(--text-2); margin-bottom: 24px; max-width: 100%;
+    }
+    .cel-curso-pill strong { color: var(--text); font-weight: 700; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+    /* barra de cuenta atrás */
+    .cel-progress-wrap {
+      height: 5px; background: var(--border); border-radius: 3px;
+      margin-bottom: 14px; overflow: hidden;
+    }
+    .cel-progress {
+      height: 5px; width: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, #0D9488, #3B82F6, #8B5CF6);
+      transform-origin: left;
+    }
+    .cel-skip {
+      font-size: 11px; color: var(--text-3); cursor: pointer;
+      background: none; border: none; font-family: inherit; padding: 0;
+    }
+    .cel-skip:hover { color: var(--text-2); text-decoration: underline; }
+    /* estrellas decorativas */
+    .cel-stars {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .cel-star {
+      position: absolute; font-size: 14px; opacity: 0;
+      animation: celStar ease-in-out infinite;
+    }
+    @keyframes celStar {
+      0%,100%{ opacity: 0; transform: scale(.4) rotate(0deg); }
+      50%    { opacity: .7; transform: scale(1) rotate(180deg); }
+    }
+    @media (max-width: 480px) {
+      .celebrate-box { padding: 36px 28px 28px; }
+      .cel-headline { font-size: 22px; }
+      .cel-icon { font-size: 52px; }
+    }
+
     /* ── Login modal ─────────────────────────────────── */
     .login-overlay {
       position: fixed; inset: 0; z-index: 1000;
@@ -1681,6 +1781,98 @@ function openEditIncModal(iid) {
   };
 }
 
+// ══════════════════════════════════════════════════════════════════
+//  CELEBRACIÓN — ¡Publicado!
+// ══════════════════════════════════════════════════════════════════
+
+function showPublicadoCelebration(courseName) {
+  const existing = document.getElementById('celebrateOverlay');
+  if (existing) existing.remove();
+
+  const firstName = (activeUser || 'campeón/a').split(' ')[0];
+  const DURATION  = 5000;
+
+  const overlay = document.createElement('div');
+  overlay.id        = 'celebrateOverlay';
+  overlay.className = 'celebrate-overlay';
+  overlay.innerHTML = `
+    <div class="celebrate-box" id="celebrateBox">
+      <!-- estrellas de fondo -->
+      <div class="cel-stars" id="celStars"></div>
+      <!-- confetti -->
+      <div class="cel-confetti" id="celConfetti"></div>
+      <!-- contenido -->
+      <span class="cel-icon">🚀</span>
+      <div class="cel-headline">¡Misión cumplida!</div>
+      <div class="cel-sub">¡Enhorabuena, ${escHtml(firstName)}!</div>
+      <div class="cel-curso-pill">
+        <span>📋</span>
+        <strong title="${escHtml(courseName)}">${escHtml(courseName)}</strong>
+        <span style="color:#0D9488;font-size:12px;font-weight:700">está PUBLICADO 🎉</span>
+      </div>
+      <div class="cel-progress-wrap">
+        <div class="cel-progress" id="celBar"></div>
+      </div>
+      <button class="cel-skip" onclick="closeCelebration()">Cerrar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // --- Confetti ---
+  const palette = ['#0D9488','#3B82F6','#8B5CF6','#F97316','#EF4444','#22C55E','#F59E0B','#EC4899'];
+  const confCont = document.getElementById('celConfetti');
+  for (let i = 0; i < 70; i++) {
+    const p = document.createElement('div');
+    p.className = 'cel-particle';
+    const size = 5 + Math.random() * 8;
+    p.style.cssText = [
+      `left:${Math.random()*100}%`,
+      `width:${size}px`,
+      `height:${size}px`,
+      `background:${palette[Math.floor(Math.random()*palette.length)]}`,
+      `border-radius:${Math.random()>.4?'50%':'2px'}`,
+      `animation-duration:${1.8 + Math.random()*2.4}s`,
+      `animation-delay:${Math.random()*1.2}s`,
+    ].join(';');
+    confCont.appendChild(p);
+  }
+
+  // --- Estrellas decorativas ---
+  const starPos = [
+    [8,12],[88,10],[5,55],[92,50],[15,80],[85,75],[50,5],[20,30],[75,28],[60,90]
+  ];
+  const starCont = document.getElementById('celStars');
+  starPos.forEach(([lft, top]) => {
+    const s = document.createElement('span');
+    s.className = 'cel-star';
+    s.textContent = ['⭐','✨','💫','🌟'][Math.floor(Math.random()*4)];
+    s.style.cssText = `left:${lft}%;top:${top}%;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*1.5}s`;
+    starCont.appendChild(s);
+  });
+
+  // --- Barra de cuenta atrás ---
+  const bar   = document.getElementById('celBar');
+  const start = performance.now();
+  const tick  = (now) => {
+    const pct = Math.max(0, 1 - (now - start) / DURATION);
+    bar.style.transform = `scaleX(${pct})`;
+    if (pct > 0) requestAnimationFrame(tick);
+    else closeCelebration();
+  };
+  requestAnimationFrame(tick);
+
+  // Cerrar al hacer clic en el fondo
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeCelebration(); });
+}
+
+function closeCelebration() {
+  const el = document.getElementById('celebrateOverlay');
+  if (!el) return;
+  el.style.transition = 'opacity .3s, transform .3s';
+  el.style.opacity    = '0';
+  el.style.transform  = 'scale(.96)';
+  setTimeout(() => el.remove(), 320);
+}
+
 function toggleResolutionField() {
   const show = document.getElementById('f_iresolved').value === '1';
   document.getElementById('fg_resolution').style.display = show ? '' : 'none';
@@ -2192,7 +2384,9 @@ function doPost(e) {
       if (!sel) { toast('Selecciona un estado'); return false; }
       const key=sel.dataset.k, notes=document.getElementById('f_sNotes').value, now=today();
       c.versions.push({id:uid(),number:nextMinor(cv.number),status:key,date:now,notes,incidents:[],modificadoPor:activeUser});
-      c.updatedAt=now; save(); return true;
+      c.updatedAt=now; save();
+      if (key === 'publicado') setTimeout(() => showPublicadoCelebration(c.name), 350);
+      return true;
     };
   }
 
