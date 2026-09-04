@@ -181,7 +181,7 @@
     /* ── Stat cards ───────────────────────────────────── */
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
       gap: 12px; margin-bottom: 24px;
     }
     .stat {
@@ -595,7 +595,7 @@
       :root { --panel-w: 100vw; }
       .main.panel-open { margin-right: 0; }
       .panel { top: 0; height: 100vh; z-index: 101; }
-      .stats { grid-template-columns: repeat(3,1fr); }
+      .stats { grid-template-columns: repeat(4,1fr); }
       .info-grid { grid-template-columns: 1fr; }
       .f2 { grid-template-columns: 1fr; }
       .col-prov, .col-ver, .col-days, .col-by { display: none; }
@@ -1232,11 +1232,13 @@ function renderStats() {
   filtered.forEach(c=>{ const s=curVer(c)?.status; if(s) cnt[s]=(cnt[s]||0)+1; });
   const items = [
     { key:'',             label:'Total',        val:cnt._total,        color:'var(--primary)' },
+    { key:'entregado',    label:'Entregado',    val:cnt.entregado,     color:'#6366F1'        },
     { key:'en_revision',  label:'En revisión',  val:cnt.en_revision,   color:'#8B5CF6'        },
     { key:'incidencia',   label:'Incidencias',  val:cnt.incidencia,    color:'#EF4444'        },
     { key:'en_correccion',label:'En corrección',val:cnt.en_correccion, color:'#F97316'        },
     { key:'aprobado',     label:'Aprobados',    val:cnt.aprobado,      color:'#22C55E'        },
     { key:'publicado',    label:'Publicados',   val:cnt.publicado,     color:'#0D9488'        },
+    { key:'en_pausa',     label:'En pausa',     val:cnt.en_pausa,      color:'#94A3B8'        },
   ];
   const active = document.getElementById('fStat').value;
   bar.innerHTML = items.map(i=>`
