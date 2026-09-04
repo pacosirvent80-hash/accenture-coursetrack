@@ -1326,11 +1326,12 @@ function renderStats() {
   Object.keys(STATUS).forEach(k=>cnt[k]=0);
   filtered.forEach(c=>{ const s=curVer(c)?.status; if(s) cnt[s]=(cnt[s]||0)+1; });
   const withOpenInc = filtered.filter(c=>openInc(c).length>0).length;
+  const totalOpenInc = filtered.flatMap(c=>openInc(c)).length;
   const items = [
     { key:'',             label:'Total',        val:cnt._total,        color:'var(--primary)' },
     { key:'entregado',    label:'Entregado',    val:cnt.entregado,     color:'#6366F1'        },
     { key:'en_revision',  label:'En revisión',  val:cnt.en_revision,   color:'#8B5CF6'        },
-    { key:'incidencia',   label:'Incidencias',  val:withOpenInc,       color:'#EF4444'        },
+    { key:'incidencia',   label:'Incidencias',  val:totalOpenInc,      color:'#EF4444'        },
     { key:'en_correccion',label:'En corrección',val:cnt.en_correccion, color:'#F97316'        },
     { key:'aprobado',     label:'Aprobados',    val:cnt.aprobado,      color:'#22C55E'        },
     { key:'publicado',    label:'Publicados',   val:cnt.publicado,     color:'#0D9488'        },
