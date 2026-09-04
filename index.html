@@ -594,7 +594,7 @@
     @media (max-width: 768px) {
       :root { --panel-w: 100vw; }
       .main.panel-open { margin-right: 0; }
-      .panel { top: 0; height: 100vh; }
+      .panel { top: 0; height: 100vh; z-index: 101; }
       .stats { grid-template-columns: repeat(3,1fr); }
       .info-grid { grid-template-columns: 1fr; }
       .f2 { grid-template-columns: 1fr; }
@@ -1396,6 +1396,7 @@ function selectCourse(id) {
   selId = id;
   document.getElementById('panel').classList.add('open');
   document.getElementById('main').classList.add('panel-open');
+  history.pushState({ panel: id }, '');
   renderPanel(); renderTable();
 }
 function closePanel() {
@@ -1404,6 +1405,9 @@ function closePanel() {
   document.getElementById('main').classList.remove('panel-open');
   renderTable();
 }
+window.addEventListener('popstate', e => {
+  if (document.getElementById('panel').classList.contains('open')) closePanel();
+});
 function renderPanel() {
   const c = getCourse(selId); if(!c) return;
   const cv = curVer(c);
