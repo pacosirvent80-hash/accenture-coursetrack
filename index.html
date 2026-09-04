@@ -1871,7 +1871,7 @@ function doPost(e) {
         (steps ? `Pasos para reproducirlo:\n${steps}\n\n` : '') +
         `---\nUsuario: ${activeUser||'—'}\nFecha: ${today()}\nNavegador: ${navigator.userAgent}`
       );
-      window.location.href = `mailto:f.sirvent.vila@accenture.com?subject=${subject}&body=${body}`;
+      window.location.href = `mailto:test@test.com?subject=${subject}&body=${body}`;
       return true;
     };
     return;
