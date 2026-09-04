@@ -158,7 +158,14 @@ Abrir la aplicación → ⚙ → pegar la URL del Web App → **Guardar y sincro
 Los datos se serializan como JSON y se guardan en la celda **A1** de la pestaña `Data`. La pestaña `Log` registra cada escritura con fecha/hora y tamaño en bytes.
 
 ### Resetear los datos
-Para empezar de cero: borrar el contenido de la celda **A1** en Sheets + cada usuario limpia su localStorage desde ⚙ → «Limpiar datos locales». Exportar un JSON de respaldo antes de borrar.
+
+Para empezar de cero necesitas limpiar los dos sitios donde viven los datos:
+
+**1. Datos locales (este navegador)** → ⚙ Ajustes → **🗑 Limpiar datos locales** (zona de peligro al final del modal). Borra el `coursetrack_v1` del navegador y reinicia con los datos de ejemplo. No afecta a Google Sheets ni a otros usuarios. Cada compañero debe hacerlo en su propio navegador.
+
+**2. Google Sheets (datos compartidos)** → Abrir la Google Sheet → pestaña **Data** → borrar el contenido de la celda **A1** → guardar. La próxima sincronización sobreescribirá A1 con el estado local de quien guarde primero.
+
+> Exporta siempre una copia de seguridad JSON (**⬇ Exportar → JSON**) antes de borrar.
 
 ---
 
