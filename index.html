@@ -685,6 +685,12 @@
       #toast { bottom: max(16px, env(safe-area-inset-bottom, 16px)); white-space: normal; text-align: center; max-width: 90vw; }
     }
 
+    /* Botón volver: solo visible en móvil */
+    .panel-back-btn { display: none; }
+    @media (max-width: 768px) {
+      .panel-back-btn { display: inline-flex; }
+    }
+
     /* ── Teléfonos muy pequeños ≤ 420px ───────────────────── */
     @media (max-width: 420px) {
       .hdr-brand { display: none; }
@@ -846,6 +852,7 @@
   </div>
   <div class="panel-body" id="panelBody"></div>
   <div class="panel-foot">
+    <button class="btn btn-ghost btn-sm panel-back-btn" onclick="closePanel()" title="Volver">← Volver</button>
     <button class="btn btn-ghost btn-sm" onclick="openModal('editCourse')">✏ Editar curso</button>
     <button class="btn btn-ghost btn-sm" onclick="openModal('status')">↔ Cambiar estado</button>
     <button class="btn btn-ghost btn-sm" onclick="openModal('version')">+ Nueva versión</button>
