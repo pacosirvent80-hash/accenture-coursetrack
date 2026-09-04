@@ -124,8 +124,11 @@
     }
     .hdr-logo {
       display: flex; align-items: center; gap: 10px;
-      font-weight: 700; font-size: 16px; color: var(--text);
       white-space: nowrap;
+    }
+    .hdr-brand {
+      font-size: 18px; font-weight: 300;
+      letter-spacing: -0.03em; color: var(--text);
     }
     .pro-max {
       font-size: 9px; font-weight: 900; font-style: italic;
@@ -733,7 +736,7 @@
 <header class="hdr">
   <div class="hdr-logo">
     <div class="icon">📋</div>
-    CourseTrack
+    <span class="hdr-brand">CourseTrack</span>
     <span class="pro-max">Pro Max</span>
   </div>
   <div class="hdr-actions">
