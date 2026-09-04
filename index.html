@@ -705,6 +705,84 @@
       .panel-foot .btn-danger { width: auto; align-self: flex-end; }
     }
 
+    /* ══════════════════════════════════════════════════════
+       Vista global de incidencias — toggle y tabla
+    ══════════════════════════════════════════════════════ */
+    .view-toggle {
+      display: flex; border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0;
+    }
+    .vt-btn {
+      padding: 0 11px; height: 34px; font-size: 12px; font-weight: 500;
+      border: none; background: var(--surface-2); color: var(--text-2);
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+      white-space: nowrap; transition: background .15s, color .15s; font-family: inherit;
+    }
+    .vt-btn + .vt-btn { border-left: 0.5px solid var(--border); }
+    .vt-btn.vt-active { background: var(--primary); color: #fff; }
+    .vt-cnt {
+      background: rgba(255,255,255,.3); font-size: 10px; font-weight: 700;
+      padding: 1px 5px; border-radius: 8px; line-height: 1.4;
+    }
+    .vt-btn:not(.vt-active) .vt-cnt { background: #EF4444; color:#fff; }
+    .inc-global-banner {
+      background: #FEF2F2; border: 0.5px solid #FECACA; border-radius: var(--radius-sm);
+      padding: 8px 14px; margin-bottom: 12px; display: flex; align-items: center;
+      gap: 8px; font-size: 12px; color: #991B1B;
+    }
+    .ig-course { font-weight: 600; font-size: 13px; }
+    .ig-code   { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+    .ig-inc-title { font-weight: 500; }
+    .ig-inc-desc  { font-size: 11px; color: var(--text-2); margin-top: 2px; max-width: 240px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ig-days-ok    { color: #22C55E; font-weight: 700; font-size: 12px; }
+    .ig-days-warn  { color: #F97316; font-weight: 700; font-size: 12px; }
+    .ig-days-alert { color: #EF4444; font-weight: 700; font-size: 12px; }
+    /* Tarjetas móvil — vista global */
+    .ig-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
+    }
+    .ig-card-hdr { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+    .ig-card-title { font-weight: 500; font-size: 14px; margin-bottom: 3px; }
+    .ig-card-desc  { font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+    .ig-card-foot  { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    /* ══════════════════════════════════════════════════════
+       Comentarios en incidencias
+    ══════════════════════════════════════════════════════ */
+    .inc-comments { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+    .inc-comments-title {
+      font-size: 11px; font-weight: 600; color: var(--text-2);
+      text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px;
+    }
+    .comment-item { display: flex; gap: 8px; margin-bottom: 8px; }
+    .comment-avatar {
+      width: 26px; height: 26px; border-radius: 50%; background: var(--primary);
+      color: #fff; flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; font-size: 10px; font-weight: 700;
+    }
+    .comment-body  { flex: 1; min-width: 0; }
+    .comment-meta  { font-size: 11px; color: var(--text-3); margin-bottom: 3px; }
+    .comment-text  {
+      font-size: 13px; background: var(--surface-2); padding: 6px 10px;
+      border-radius: var(--radius-sm); border: 0.5px solid var(--border);
+      word-break: break-word;
+    }
+    .comment-input-wrap { display: flex; gap: 6px; margin-top: 8px; }
+    .comment-input {
+      flex: 1; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 6px 10px; font-size: 13px; font-family: inherit;
+      background: var(--surface); color: var(--text); height: 34px;
+    }
+    .comment-input:focus { outline: none; border-color: var(--primary); }
+    .comment-send {
+      flex-shrink: 0; padding: 0 12px; height: 34px; background: var(--primary);
+      color: #fff; border: none; border-radius: var(--radius-sm); font-size: 13px;
+      cursor: pointer; font-family: inherit; font-weight: 500;
+    }
+    .comment-send:hover { background: var(--primary-dark); }
+
     /* ── Login modal ─────────────────────────────────── */
     .login-overlay {
       position: fixed; inset: 0; z-index: 1000;
@@ -772,6 +850,7 @@
         <button onclick="exportJSON(); closeExportMenu()">📄 JSON</button>
         <button onclick="exportCSV(); closeExportMenu()">📊 CSV</button>
         <button onclick="exportExcel(); closeExportMenu()">🟢 Excel (.xlsx)</button>
+        <button onclick="exportReport(); closeExportMenu()">📑 Informe ejecutivo</button>
       </div>
     </div>
     <button class="btn btn-ghost btn-sm btn-hdr-import" onclick="importJSON()" title="Importar JSON">⬆ <span class="btn-lbl">Importar</span></button>
@@ -808,6 +887,10 @@
     </select>
     <div class="tb-space"></div>
     <span id="countLbl" class="count-lbl"></span>
+    <div class="view-toggle">
+      <button id="vt-courses"   class="vt-btn vt-active" onclick="setView('courses')"  title="Vista de cursos">📋 Cursos</button>
+      <button id="vt-incidents" class="vt-btn"            onclick="setView('incidents')" title="Vista global de incidencias">⚡ Incidencias <span id="vt-inc-cnt" class="vt-cnt" style="display:none">0</span></button>
+    </div>
   </div>
   <div class="table-wrap">
     <table>
@@ -857,6 +940,7 @@
     <button class="btn btn-ghost btn-sm" onclick="openModal('status')">↔ Cambiar estado</button>
     <button class="btn btn-ghost btn-sm" onclick="openModal('version')">+ Nueva versión</button>
     <button class="btn btn-ghost btn-sm" style="color:#EF4444;border-color:#FECACA" onclick="openModal('incident')">⚡ Nueva incidencia</button>
+    <button class="btn btn-ghost btn-sm" onclick="duplicateCourse()" title="Duplicar este curso">⊕ Duplicar</button>
     <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteCourse()" title="Eliminar curso">🗑</button>
   </div>
 </aside>
@@ -950,6 +1034,7 @@ let sortField = 'updatedAt';
 let sortDir   = -1;
 let confirmFn  = null;
 let activeUser = localStorage.getItem(USER_KEY) || '';
+let viewMode  = 'courses'; // 'courses' | 'incidents'
 
 // ══════════════════════════════════════════════════════════════════
 //  UTILS
@@ -1222,7 +1307,17 @@ function seed() {
 //  RENDER
 // ══════════════════════════════════════════════════════════════════
 
-function render() { renderStats(); renderFilters(); renderTable(); }
+function render() {
+  renderStats();
+  renderFilters();
+  if (viewMode === 'incidents') {
+    renderIncidentsGlobal();
+  } else {
+    const b = document.getElementById('incGlobalBanner');
+    if (b) b.style.display = 'none';
+    renderTable();
+  }
+}
 
 function renderStats() {
   const bar = document.getElementById('statsBar');
@@ -1247,6 +1342,10 @@ function renderStats() {
       <div class="stat-val" style="color:${i.color}">${i.val}</div>
       <div class="stat-lbl">${i.label}</div>
     </div>`).join('');
+  // actualizar badge del toggle de incidencias
+  const totalOpenInc = courses.flatMap(c=>openInc(c)).length;
+  const vtCnt = document.getElementById('vt-inc-cnt');
+  if (vtCnt) { vtCnt.textContent = totalOpenInc; vtCnt.style.display = totalOpenInc > 0 ? '' : 'none'; }
 }
 
 function filterStat(key) { document.getElementById('fStat').value=key; render(); }
@@ -1486,6 +1585,22 @@ function renderTab() {
           <button class="edit-inc-btn" onclick="openEditIncModal('${i.id}')">✏ Editar incidencia</button>
           ${!i.resolved?`<button class="resolve-btn" style="margin-left:auto" onclick="resolveInc('${i.id}')">Resolver ✓</button>`:''}
         </div>
+        <div class="inc-comments">
+          <div class="inc-comments-title">💬 Comentarios${(i.comments&&i.comments.length)?` (${i.comments.length})`:''}</div>
+          ${(i.comments||[]).map(cm=>`
+            <div class="comment-item">
+              <div class="comment-avatar">${escHtml((cm.autor||'?').charAt(0).toUpperCase())}</div>
+              <div class="comment-body">
+                <div class="comment-meta">${escHtml(cm.autor||'')} · ${fmt(cm.fecha)}</div>
+                <div class="comment-text">${escHtml(cm.text)}</div>
+              </div>
+            </div>`).join('')}
+          <div class="comment-input-wrap">
+            <input id="cinp-${i.id}" class="comment-input" placeholder="Añadir comentario…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addComment('${i.id}')}">
+            <button class="comment-send" onclick="addComment('${i.id}')">Enviar</button>
+          </div>
+        </div>
       </div>`;
     el.innerHTML=
       (open.length  ?`<div class="sec-title">Abiertas (${open.length})</div>${open.map(mkCard).join('')}`:'') +
@@ -1578,6 +1693,298 @@ function deleteCourse() {
   courses=courses.filter(x=>x.id!==selId);
   save(); closePanel();
   toast('Curso eliminado');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FEATURE 1 — Vista global de incidencias
+// ══════════════════════════════════════════════════════════════════
+
+function setView(mode) {
+  viewMode = mode;
+  document.getElementById('vt-courses').classList.toggle('vt-active', mode === 'courses');
+  document.getElementById('vt-incidents').classList.toggle('vt-active', mode === 'incidents');
+  render();
+}
+
+function renderIncidentsGlobal() {
+  const filtered = getFiltered();
+  const rows = [];
+  filtered.forEach(c => {
+    c.versions.forEach(v => {
+      (v.incidents||[]).filter(i=>!i.resolved).forEach(i => {
+        rows.push({...i, _cid:c.id, _curso:c.name, _code:c.code||'', _provider:c.provider||'', _ver:v.number});
+      });
+    });
+  });
+  // ordenar: severidad (Alta>Media>Baja) luego días abierta desc
+  const sevOrd = {Alta:0, Media:1, Baja:2};
+  rows.sort((a,b)=>{
+    const sa=(sevOrd[a.severity]??1), sb=(sevOrd[b.severity]??1);
+    if (sa!==sb) return sa-sb;
+    return daysSince(a.fechaCreacion||a.date||today()) - daysSince(b.fechaCreacion||b.date||today());
+  });
+
+  // banner
+  const tableWrap = document.querySelector('.table-wrap');
+  let banner = document.getElementById('incGlobalBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'incGlobalBanner';
+    banner.className = 'inc-global-banner';
+    tableWrap.parentNode.insertBefore(banner, tableWrap);
+  }
+  banner.style.display = '';
+  const courseCount = new Set(rows.map(r=>r._cid)).size;
+  if (!rows.length) {
+    banner.style.cssText = 'background:#F0FDF4;border-color:#BBF7D0;color:#166534';
+    banner.innerHTML = '✅ <strong>Sin incidencias abiertas</strong> en el portfolio actual';
+  } else {
+    banner.style.cssText = '';
+    banner.innerHTML = `⚡ <strong>${rows.length} incidencia(s) abierta(s)</strong> en ${courseCount} curso(s)`;
+  }
+
+  // cabecera de tabla
+  const thead = document.getElementById('tableHead');
+  thead.innerHTML = `<tr>
+    <th>Curso</th><th>Incidencia</th><th>Ver.</th><th>Severidad</th><th>Estado</th><th>Días</th><th>Acciones</th>
+  </tr>`;
+
+  const tbody = document.getElementById('tableBody');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    return;
+  }
+
+  const isMobile = window.innerWidth <= 600;
+  if (isMobile) {
+    tbody.innerHTML = rows.map(r => {
+      const dias = daysSince(r.fechaCreacion||r.date||today());
+      const dc = dias>30?'ig-days-alert':dias>7?'ig-days-warn':'ig-days-ok';
+      return `<tr><td colspan="7" style="padding:0">
+        <div class="ig-card">
+          <div class="ig-card-hdr">
+            <span class="sev sev-${(r.severity||'media').toLowerCase()}">${r.severity||'Media'}</span>
+            <span class="vtag">v${r._ver}</span>
+            <span class="${dc}" style="margin-left:auto">${dias}d</span>
+          </div>
+          <div class="ig-card-title">${escHtml(r.title)}</div>
+          <div class="ig-card-desc">${escHtml(r._curso)}${r._code?' · '+escHtml(r._code):''}</div>
+          <div class="ig-card-foot">
+            <button class="resolve-btn" style="font-size:11px;padding:4px 10px" onclick="resolveIncGlobal('${r._cid}','${r.id}')">Resolver ✓</button>
+            <button class="edit-inc-btn" style="font-size:11px;padding:4px 8px" onclick="editIncGlobal('${r._cid}','${r.id}')">✏ Editar</button>
+            <button class="edit-inc-btn" style="font-size:11px;padding:4px 8px" onclick="goToCourse('${r._cid}')">→ Ver curso</button>
+          </div>
+        </div>
+      </td></tr>`;
+    }).join('');
+  } else {
+    tbody.innerHTML = rows.map(r => {
+      const dias = daysSince(r.fechaCreacion||r.date||today());
+      const dc = dias>30?'ig-days-alert':dias>7?'ig-days-warn':'ig-days-ok';
+      return `<tr>
+        <td><div class="ig-course">${escHtml(r._curso)}</div><div class="ig-code">${escHtml(r._code)}${r._provider?' · '+escHtml(r._provider):''}</div></td>
+        <td><div class="ig-inc-title">${escHtml(r.title)}</div><div class="ig-inc-desc">${escHtml(r.description||'')}</div></td>
+        <td><span class="vtag">v${r._ver}</span></td>
+        <td><span class="sev sev-${(r.severity||'media').toLowerCase()}">${r.severity||'Media'}</span></td>
+        <td>${r.status||'Abierta'}</td>
+        <td><span class="${dc}">${dias}d</span></td>
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="resolve-btn" style="font-size:11px;padding:4px 8px" onclick="resolveIncGlobal('${r._cid}','${r.id}')">Resolver ✓</button>
+          <button class="edit-inc-btn" style="font-size:11px;padding:4px 8px" onclick="editIncGlobal('${r._cid}','${r.id}')">✏</button>
+          <button class="edit-inc-btn" style="font-size:11px;padding:4px 8px" onclick="goToCourse('${r._cid}')">→ Curso</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function resolveIncGlobal(cid, iid) {
+  const prev = selId;
+  selId = cid;
+  resolveInc(iid);
+  selId = prev;
+  if (viewMode === 'incidents') render();
+}
+
+function editIncGlobal(cid, iid) {
+  selId = cid;
+  openEditIncModal(iid);
+}
+
+function goToCourse(cid) {
+  setView('courses');
+  selectCourse(cid);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FEATURE 3 — Informe ejecutivo exportable
+// ══════════════════════════════════════════════════════════════════
+
+function exportReport() {
+  const dt = new Date().toLocaleDateString('es-ES', {day:'2-digit',month:'long',year:'numeric'});
+  const all = courses; // informe siempre sobre el portfolio completo
+  const openIncs = all.flatMap(c=>
+    c.versions.flatMap(v=>
+      (v.incidents||[]).filter(i=>!i.resolved).map(i=>({...i,_ver:v.number,_curso:c.name,_code:c.code||'',_provider:c.provider||''}))
+    )
+  );
+  const cnt = {};
+  Object.keys(STATUS).forEach(k=>cnt[k]=0);
+  all.forEach(c=>{ const s=curVer(c)?.status; if(s) cnt[s]=(cnt[s]||0)+1; });
+  const sevOrd = {Alta:0, Media:1, Baja:2};
+  const sortedIncs = [...openIncs].sort((a,b)=>(sevOrd[a.severity]??1)-(sevOrd[b.severity]??1));
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Informe Ejecutivo — ${dt}</title>
+<style>
+  body{font-family:Arial,sans-serif;max-width:1100px;margin:40px auto;padding:0 24px;color:#1E293B;background:#fff}
+  h1{font-size:26px;font-weight:800;color:#1E40AF;margin:0 0 4px}
+  .subtitle{font-size:14px;color:#64748B;margin:0 0 32px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+  .kpi{border:1px solid #E2E8F0;border-radius:8px;padding:16px;text-align:center}
+  .kpi-val{font-size:32px;font-weight:800;line-height:1}
+  .kpi-lbl{font-size:12px;color:#64748B;margin-top:4px}
+  h2{font-size:16px;font-weight:700;color:#1E293B;border-bottom:2px solid #E2E8F0;padding-bottom:6px;margin:0 0 12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:32px}
+  th{background:#F7F9FC;color:#64748B;font-size:11px;font-weight:600;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid #E2E8F0}
+  td{padding:10px 12px;border-bottom:1px solid #F1F5F9;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}
+  .sev-alta{background:#FEF2F2;color:#DC2626}
+  .sev-media{background:#FFF7ED;color:#C2410C}
+  .sev-baja{background:#F0FDF4;color:#16A34A}
+  .footer{font-size:11px;color:#94A3B8;text-align:center;margin-top:40px;border-top:1px solid #E2E8F0;padding-top:16px}
+  @media print{body{margin:0}}
+</style>
+</head>
+<body>
+  <h1>Informe Ejecutivo de Formación</h1>
+  <p class="subtitle">Generado el ${dt} &nbsp;·&nbsp; ${all.length} cursos &nbsp;·&nbsp; ${openIncs.length} incidencias abiertas</p>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-val" style="color:#3B82F6">${all.length}</div><div class="kpi-lbl">Cursos totales</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#22C55E">${cnt.publicado||0}</div><div class="kpi-lbl">Publicados</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#8B5CF6">${cnt.en_revision||0}</div><div class="kpi-lbl">En revisión</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#EF4444">${openIncs.length}</div><div class="kpi-lbl">Incidencias abiertas</div></div>
+  </div>
+  <h2>Portfolio de cursos</h2>
+  <table>
+    <thead><tr><th>Código</th><th>Nombre</th><th>Proveedor</th><th>Estado</th><th>Versión</th><th>Inc. abiertas</th><th>Última actualización</th></tr></thead>
+    <tbody>
+      ${all.map(c=>{
+        const cv=curVer(c); const oi=openInc(c).length;
+        const s=STATUS[cv?.status]||{label:cv?.status||'—',color:'#94A3B8'};
+        return `<tr>
+          <td>${escHtml(c.code||'—')}</td>
+          <td><strong>${escHtml(c.name)}</strong></td>
+          <td>${escHtml(c.provider||'—')}</td>
+          <td><span class="badge" style="background:${s.color}22;color:${s.color}">${s.label}</span></td>
+          <td>v${cv?.number||'—'}</td>
+          <td>${oi?`<strong style="color:#EF4444">${oi}</strong>`:'—'}</td>
+          <td>${fmt(c.updatedAt)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+  ${sortedIncs.length?`
+  <h2>Incidencias abiertas (${sortedIncs.length})</h2>
+  <table>
+    <thead><tr><th>Curso</th><th>Versión</th><th>Incidencia</th><th>Severidad</th><th>Días abierta</th></tr></thead>
+    <tbody>
+      ${sortedIncs.map(i=>`<tr>
+        <td>${escHtml(i._curso)}<br><small style="color:#94A3B8">${escHtml(i._code)}</small></td>
+        <td>v${i._ver}</td>
+        <td><strong>${escHtml(i.title)}</strong><br><small style="color:#64748B">${escHtml(i.description||'')}</small></td>
+        <td><span class="badge sev-${(i.severity||'media').toLowerCase()}">${i.severity||'Media'}</span></td>
+        <td>${daysSince(i.fechaCreacion||i.date||today())} días</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`:''}
+  <div class="footer">Generado con CourseTrack Pro Max &nbsp;·&nbsp; ${dt}</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `informe_coursetrack_${today()}.html`
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Informe ejecutivo exportado ✓');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FEATURE 5 — Duplicar curso
+// ══════════════════════════════════════════════════════════════════
+
+function duplicateCourse() {
+  const c = getCourse(selId);
+  if (!c) return;
+  const copia = {
+    id:          uid(),
+    name:        c.name + ' (copia)',
+    code:        c.code ? c.code + '-C' : '',
+    provider:    c.provider,
+    language:    c.language,
+    scormVersion:c.scormVersion,
+    duration:    c.duration,
+    notes:       c.notes,
+    createdAt:   today(),
+    updatedAt:   today(),
+    versions: [{
+      id:           uid(),
+      number:       '1.0',
+      status:       'entregado',
+      date:         today(),
+      notes:        '',
+      modificadoPor:activeUser,
+      incidents:    []
+    }]
+  };
+  courses.push(copia);
+  save();
+  selId = copia.id;
+  history.pushState({ panel: copia.id }, '');
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('panel-open');
+  renderPanel();
+  renderTable();
+  toast('Curso duplicado ✓ — edita el nombre para diferenciarlo');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  FEATURE 6 — Comentarios en incidencias
+// ══════════════════════════════════════════════════════════════════
+
+function addComment(incId) {
+  const c = getCourse(selId);
+  if (!c) return;
+  const inp = document.getElementById('cinp-' + incId);
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  let found = false;
+  c.versions.forEach(v => {
+    const i = (v.incidents||[]).find(x=>x.id===incId);
+    if (i) {
+      if (!i.comments) i.comments = [];
+      i.comments.push({ id:uid(), text, autor:activeUser||'—', fecha:today() });
+      found = true;
+    }
+  });
+  if (!found) return;
+  c.updatedAt = today();
+  save();
+  renderTab();
+  // mantener scroll al pie
+  setTimeout(()=>{
+    const newInp = document.getElementById('cinp-'+incId);
+    if (newInp) newInp.focus();
+  }, 50);
 }
 
 // ══════════════════════════════════════════════════════════════════
